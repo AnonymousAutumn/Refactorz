@@ -1,13 +1,15 @@
---------------
--- Services --
---------------
+--[[
+	GiftUI - Client-side gift interface controller.
+
+	Features:
+	- Gift notification badge display
+	- Gift display frame management
+	- Gift sending interface
+	- Background data refresh
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local localPlayerGui = localPlayer:WaitForChild("PlayerGui")
@@ -32,10 +34,6 @@ local requestGiftDataFunction = remoteFunctions.RequestGifts
 local instancesFolder = ReplicatedStorage.Instances
 local giftReceivedPrefab = instancesFolder.GuiPrefabs.GiftReceivedPrefab
 
----------------
--- Variables --
----------------
-
 local GiftUIState = {
 	activeGiftTimeDisplayEntries = {},
 	cachedGiftDataFromServer = {},
@@ -57,11 +55,7 @@ local giftSendConfirmationButton
 local giftNotificationButton
 local giftCountNotificationLabel
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func)
+local function safeExecute(func: () -> ()): boolean
 	local success, errorMessage = pcall(func)
 	if not success then
 		warn(`[GiftUI] Error: {errorMessage}`)
@@ -69,19 +63,18 @@ local function safeExecute(func)
 	return success
 end
 
--- ouuuuuuuuuuuuuuggggh I love helldivers 2
 ServerComms.safeExecute = safeExecute
 StateManager.safeExecute = safeExecute
 ErrorDisplay.safeExecute = safeExecute
 
-local function updateGiftNotificationBadgeDisplay(unreadGiftCount)
+local function updateGiftNotificationBadgeDisplay(unreadGiftCount: number)
 	StateManager.updateGiftNotificationBadgeDisplay(
 		{ giftCountNotificationLabel = giftCountNotificationLabel },
 		unreadGiftCount
 	)
 end
 
-local function displayTemporaryErrorMessage(errorMessageText)
+local function displayTemporaryErrorMessage(errorMessageText: string)
 	local errorDisplayElements = {
 		errorMessageDisplayFrame = errorMessageDisplayFrame,
 		errorMessageLabel = errorMessageLabel,
@@ -118,7 +111,7 @@ end
 
 local function clearAllGiftDisplayElements()
 	local children = giftEntriesScrollingFrame:GetChildren()
-	for i, childElement in children do
+	for i, childElement in pairs(children) do
 		if not childElement:IsA("UIListLayout") then
 			safeExecute(function()
 				childElement:Destroy()
@@ -246,7 +239,7 @@ end
 local function cleanup()
 	GiftUIState.connections:disconnect()
 
-	for _, thread in ipairs(GiftUIState.threads) do
+	for _, thread in pairs(GiftUIState.threads) do
 		pcall(function()
 			if thread then
 				task.cancel(thread)
@@ -308,9 +301,5 @@ local function initialize()
 	BackgroundTasks.startContinuousGiftDataRefreshLoop(GiftUIState.threads)
 	BackgroundTasks.startContinuousTimeDisplayUpdateLoop(GiftUIState.threads, giftDisplayFrame)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

@@ -1,25 +1,17 @@
------------------
--- Init Module --
------------------
+--[[
+	TimeFormatter - Formats timestamps into relative time descriptions.
+
+	Features:
+	- Relative time calculation (seconds, minutes, hours, days)
+	- Batch time label updates
+]]
 
 local TimeFormatter = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local TIME_THRESHOLDS = {
 	MINUTE = 60,
@@ -39,11 +31,10 @@ local TIME_DESC_MINUTE = "a minute ago"
 local TIME_DESC_HOUR = "an hour ago"
 local TIME_DESC_DAY = "a day ago"
 
----------------
--- Functions --
----------------
-
-function TimeFormatter.calculateRelativeTimeDescription(giftTimestamp)
+--[[
+	Calculates a human-readable relative time description from a timestamp.
+]]
+function TimeFormatter.calculateRelativeTimeDescription(giftTimestamp: number): string
 	if not (ValidationUtils.isValidNumber(giftTimestamp) and giftTimestamp >= 0) then
 		return TIME_DESC_FEW_SECONDS
 	end
@@ -71,8 +62,11 @@ function TimeFormatter.calculateRelativeTimeDescription(giftTimestamp)
 	end
 end
 
-function TimeFormatter.updateAllGiftTimeDisplayLabels(timeDisplayEntries, safeExecute, errorMessage)
-	for i, timeDisplayEntry in timeDisplayEntries do
+--[[
+	Updates all gift time display labels with current relative times.
+]]
+function TimeFormatter.updateAllGiftTimeDisplayLabels(timeDisplayEntries: { any }, safeExecute: ((() -> ()) -> boolean)?, errorMessage: string?)
+	for i, timeDisplayEntry in pairs(timeDisplayEntries) do
 		local label = timeDisplayEntry.timeDisplayLabel
 		if label and label.Parent then
 			safeExecute(function()

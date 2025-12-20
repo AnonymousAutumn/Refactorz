@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	UIRenderer - Renders gift display frames and manages UI updates.
+
+	Features:
+	- Gift frame creation and configuration
+	- Time label registration
+	- Frame cleanup management
+]]
 
 local UIRenderer = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration
@@ -22,33 +19,25 @@ local FormatString = require(modulesFolder.Utilities.FormatString)
 local TimeFormatter = require(script.Parent.TimeFormatter)
 local ValidationHandler = require(script.Parent.ValidationHandler)
 
----------------
--- Constants --
----------------
-
 local GIFT_ID_PREFIX = "Gift_"
 
----------------
--- Functions --
----------------
-
-local function generateGiftIdentifierKey(giftData)
+local function generateGiftIdentifierKey(giftData: any): string
 	return `{GIFT_ID_PREFIX}{tostring(giftData.Id)}`
 end
 
-local function formatGiftAmount(amount)
+local function formatGiftAmount(amount: number): string
 	return `{GameConfig.ROBUX_ICON_UTF}{FormatString.formatNumberWithThousandsSeparatorCommas(amount)}`
 end
 
-local function formatGiftMessage(gifterName, formattedAmount)
+local function formatGiftMessage(gifterName: string, formattedAmount: string): string
 	return `{gifterName} gifted you {formattedAmount}!`
 end
 
-local function getAvatarHeadshotURL(userId)
+local function getAvatarHeadshotURL(userId: number): string
 	return string.format(GameConfig.AVATAR_HEADSHOT_URL, userId)
 end
 
-local function configureGiftDisplayFrame(frame, giftData)
+local function configureGiftDisplayFrame(frame: Frame, giftData: any)
 	local gifterUserId = ValidationHandler.retrieveUserIdFromUsername(giftData.Gifter) or 1
 	local formattedAmount = formatGiftAmount(giftData.Amount)
 	local giftMessage = formatGiftMessage(giftData.Gifter, formattedAmount)
@@ -69,7 +58,7 @@ local function configureGiftDisplayFrame(frame, giftData)
 	end
 end
 
-local function createGiftDisplayFrameFromData(giftData, uiRefs)
+local function createGiftDisplayFrameFromData(giftData: any, uiRefs: any): Frame?
 	if not ValidationHandler.isValidGiftData(giftData) then
 		return nil
 	end
@@ -88,9 +77,9 @@ local function createGiftDisplayFrameFromData(giftData, uiRefs)
 	return nil
 end
 
-local function collectExistingGiftFrames(uiRefs)
+local function collectExistingGiftFrames(uiRefs: any): { [string]: Frame }
 	local existingFrames = {}
-	for i, childFrame in uiRefs.giftEntriesScrollingFrame:GetChildren() do
+	for i, childFrame in pairs(uiRefs.giftEntriesScrollingFrame:GetChildren()) do
 		if childFrame:IsA("Frame") then
 			existingFrames[childFrame.Name] = childFrame
 		end
@@ -98,7 +87,7 @@ local function collectExistingGiftFrames(uiRefs)
 	return existingFrames
 end
 
-local function updateExistingGiftFrame(frame, giftData, safeExecute, errorMessage)
+local function updateExistingGiftFrame(frame: Frame, giftData: any, safeExecute: (() -> ()) -> boolean, errorMessage: string?)
 	safeExecute(function()
 		local timeLabel = frame:FindFirstChild("TimeLabel")
 		if timeLabel and timeLabel:IsA("TextLabel") then
@@ -107,7 +96,7 @@ local function updateExistingGiftFrame(frame, giftData, safeExecute, errorMessag
 	end, "Error updating existing gift frame")
 end
 
-local function createOrUpdateGiftFrame(giftData, uiRefs, safeExecute, errorMessage)
+local function createOrUpdateGiftFrame(giftData: any, uiRefs: any, safeExecute: (() -> ()) -> boolean, errorMessage: string?): Frame?
 	local giftIdentifierKey = generateGiftIdentifierKey(giftData)
 	local existingFrame = uiRefs.giftEntriesScrollingFrame:FindFirstChild(giftIdentifierKey)
 
@@ -123,7 +112,7 @@ local function createOrUpdateGiftFrame(giftData, uiRefs, safeExecute, errorMessa
 	end
 end
 
-local function registerTimeDisplayEntry(frame, timestamp,timeDisplayEntries)
+local function registerTimeDisplayEntry(frame: Frame, timestamp: number, timeDisplayEntries: { any })
 	local label = frame:FindFirstChild("TimeLabel")
 	if label and label:IsA("TextLabel") then
 		table.insert(timeDisplayEntries, {
@@ -133,8 +122,8 @@ local function registerTimeDisplayEntry(frame, timestamp,timeDisplayEntries)
 	end
 end
 
-local function removeInvalidGiftFrames(validKeys, existingFrames, safeExecute, errorMessage)
-	for frameIdentifier, frameInstance in existingFrames do
+local function removeInvalidGiftFrames(validKeys: { [string]: boolean }, existingFrames: { [string]: Frame }, safeExecute: (() -> ()) -> boolean, errorMessage: string?)
+	for frameIdentifier, frameInstance in pairs(existingFrames) do
 		if not validKeys[frameIdentifier] then
 			safeExecute(function()
 				frameInstance:Destroy()
@@ -143,13 +132,16 @@ local function removeInvalidGiftFrames(validKeys, existingFrames, safeExecute, e
 	end
 end
 
-function UIRenderer.populateGiftDisplayWithServerData(serverGiftDataList, uiRefs, timeDisplayEntries, safeExecute, errorMessage)
+--[[
+	Populates the gift display with data from the server.
+]]
+function UIRenderer.populateGiftDisplayWithServerData(serverGiftDataList: { any }, uiRefs: any, timeDisplayEntries: { any }, safeExecute: (() -> ()) -> boolean, errorMessage: string?)
 	local validGiftIdentifierKeys = {}
 	local existingGiftDisplayFrames = collectExistingGiftFrames(uiRefs)
 
 	table.clear(timeDisplayEntries)
 
-	for i, individualGiftData in serverGiftDataList do
+	for i, individualGiftData in pairs(serverGiftDataList) do
 		if not ValidationHandler.isValidGiftData(individualGiftData) then
 			continue
 		end
@@ -165,9 +157,5 @@ function UIRenderer.populateGiftDisplayWithServerData(serverGiftDataList, uiRefs
 
 	removeInvalidGiftFrames(validGiftIdentifierKeys, existingGiftDisplayFrames, safeExecute)
 end
-
--------------------
--- Return Module --
--------------------
 
 return UIRenderer

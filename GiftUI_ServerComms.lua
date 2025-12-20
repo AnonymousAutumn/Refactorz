@@ -1,15 +1,19 @@
------------------
--- Init Module --
------------------
+--[[
+	ServerComms - Handles server communication for gift operations.
+
+	Features:
+	- Gift data retrieval
+	- Gift clearance notification
+	- Gift process initiation
+]]
 
 local ServerComms = {}
 ServerComms.safeExecute = nil
 
----------------
--- Functions --
----------------
-
-function ServerComms.requestLatestGiftDataFromServer(requestFunction)
+--[[
+	Requests the latest gift data from the server.
+]]
+function ServerComms.requestLatestGiftDataFromServer(requestFunction: RemoteFunction): { any }?
 	local success, retrievedGiftData = pcall(function()
 		return requestFunction:InvokeServer()
 	end)
@@ -21,7 +25,10 @@ function ServerComms.requestLatestGiftDataFromServer(requestFunction)
 	return retrievedGiftData
 end
 
-function ServerComms.notifyServerOfGiftClearance(clearEvent)
+--[[
+	Notifies the server that gifts have been cleared.
+]]
+function ServerComms.notifyServerOfGiftClearance(clearEvent: RemoteEvent)
 	if ServerComms.safeExecute then
 		ServerComms.safeExecute(function()
 			clearEvent:FireServer()
@@ -29,16 +36,15 @@ function ServerComms.notifyServerOfGiftClearance(clearEvent)
 	end
 end
 
-function ServerComms.initiateGiftProcess(toggleEvent, targetUserId)
+--[[
+	Initiates the gift process for a target user.
+]]
+function ServerComms.initiateGiftProcess(toggleEvent: RemoteEvent, targetUserId: number)
 	if ServerComms.safeExecute then
 		ServerComms.safeExecute(function()
 			toggleEvent:FireServer(targetUserId)
 		end)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return ServerComms

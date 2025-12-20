@@ -1,35 +1,27 @@
------------------
--- Init Module --
------------------
+--[[
+	ValidationHandler - Validates gift-related user inputs.
+
+	Features:
+	- Gift data validation
+	- Username/UserId lookup
+	- Input validation with error display
+]]
 
 local ValidationHandler = {}
-
---------------
--- Services --
---------------
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local ERROR_INVALID_USERNAME = "INVALID USERNAME"
 local ERROR_CANNOT_GIFT_SELF = "CANNOT GIFT TO YOURSELF"
 
----------------
--- Functions --
----------------
-
-function ValidationHandler.isValidGiftData(data)
+--[[
+	Validates gift data structure.
+]]
+function ValidationHandler.isValidGiftData(data: any): boolean
 	if typeof(data) ~= "table" then
 		return false
 	end
@@ -41,7 +33,10 @@ function ValidationHandler.isValidGiftData(data)
 		and data.Timestamp >= 0
 end
 
-function ValidationHandler.retrieveUserIdFromUsername(playerUsername)
+--[[
+	Retrieves a UserId from a username.
+]]
+function ValidationHandler.retrieveUserIdFromUsername(playerUsername: string): number?
 	if not ValidationUtils.isValidUsername(playerUsername) then
 		return nil
 	end
@@ -49,7 +44,10 @@ function ValidationHandler.retrieveUserIdFromUsername(playerUsername)
 	return success and result or nil
 end
 
-function ValidationHandler.retrieveUsernameFromUserId(userId)
+--[[
+	Retrieves a username from a UserId.
+]]
+function ValidationHandler.retrieveUsernameFromUserId(userId: number): string?
 	if not (ValidationUtils.isValidNumber(userId) and userId >= 0) then
 		return nil
 	end
@@ -57,7 +55,10 @@ function ValidationHandler.retrieveUsernameFromUserId(userId)
 	return success and result or nil
 end
 
-function ValidationHandler.validateUsernameInput(username, displayTemporaryErrorMessage)
+--[[
+	Validates username input and displays error if invalid.
+]]
+function ValidationHandler.validateUsernameInput(username: string, displayTemporaryErrorMessage: (string) -> ()): boolean
 	if not ValidationUtils.isValidUsername(username) then
 		displayTemporaryErrorMessage(ERROR_INVALID_USERNAME)
 		return false
@@ -65,7 +66,10 @@ function ValidationHandler.validateUsernameInput(username, displayTemporaryError
 	return true
 end
 
-function ValidationHandler.validateTargetUserId(userId, displayTemporaryErrorMessage)
+--[[
+	Validates target UserId and displays error if invalid.
+]]
+function ValidationHandler.validateTargetUserId(userId: number?, displayTemporaryErrorMessage: (string) -> ()): boolean
 	if not userId then
 		displayTemporaryErrorMessage(ERROR_INVALID_USERNAME)
 		return false
@@ -73,7 +77,10 @@ function ValidationHandler.validateTargetUserId(userId, displayTemporaryErrorMes
 	return true
 end
 
-function ValidationHandler.validateTargetUsername(username, displayTemporaryErrorMessage)
+--[[
+	Validates target username and displays error if invalid.
+]]
+function ValidationHandler.validateTargetUsername(username: string?, displayTemporaryErrorMessage: (string) -> ()): boolean
 	if not username then
 		displayTemporaryErrorMessage(ERROR_INVALID_USERNAME)
 		return false
@@ -81,16 +88,15 @@ function ValidationHandler.validateTargetUsername(username, displayTemporaryErro
 	return true
 end
 
-function ValidationHandler.isGiftingToSelf(username, localPlayerName, displayTemporaryErrorMessage)
+--[[
+	Checks if the user is attempting to gift to themselves.
+]]
+function ValidationHandler.isGiftingToSelf(username: string, localPlayerName: string, displayTemporaryErrorMessage: (string) -> ()): boolean
 	if username == localPlayerName then
 		displayTemporaryErrorMessage(ERROR_CANNOT_GIFT_SELF)
 		return true
 	end
 	return false
 end
-
--------------------
--- Return Module --
--------------------
 
 return ValidationHandler

@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	Transactions - Server-side transaction and gift handling.
+
+	Features:
+	- Gift request/clearance handling
+	- Purchase completion processing
+	- Cross-server donation messaging
+]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -25,15 +26,7 @@ local DonationMessaging = require(script.DonationMessaging)
 local DonationStatistics = require(script.DonationStatistics)
 local PurchaseFlow = require(script.PurchaseFlow)
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
-
----------------
--- Functions --
----------------
 
 local function cleanup()
 	connectionsMaid:disconnect()
@@ -82,9 +75,5 @@ local function initialize()
 
 	game:BindToClose(cleanup)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

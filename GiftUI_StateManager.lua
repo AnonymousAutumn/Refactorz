@@ -1,28 +1,24 @@
------------------
--- Init Module --
------------------
+--[[
+	StateManager - Manages gift UI state and notifications.
+
+	Features:
+	- Gift notification badge updates
+	- Text-to-speech announcements
+	- State reset functionality
+]]
 
 local StateManager = {}
 StateManager.safeExecute = nil
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local TextToSpeech = require(modulesFolder.Utilities.TextToSpeech)
 
----------------
--- Functions --
----------------
-
-function StateManager.updateGiftNotificationBadgeDisplay(badgeElements, unreadGiftCount)
+--[[
+	Updates the gift notification badge display and announces pending gifts.
+]]
+function StateManager.updateGiftNotificationBadgeDisplay(badgeElements: any, unreadGiftCount: number)
 	if not StateManager.safeExecute then
 		return
 	end
@@ -41,14 +37,13 @@ function StateManager.updateGiftNotificationBadgeDisplay(badgeElements, unreadGi
 	end)
 end
 
-function StateManager.resetGiftState(state)
+--[[
+	Resets the gift state to default values.
+]]
+function StateManager.resetGiftState(state: any)
 	state.currentUnreadGiftCount = 0
 	table.clear(state.cachedGiftDataFromServer)
 	table.clear(state.activeGiftTimeDisplayEntries)
 end
-
--------------------
--- Return Module --
--------------------
 
 return StateManager

@@ -1,15 +1,16 @@
---------------
--- Services --
---------------
+--[[
+	DonationEffect - Client-side coin visual effects for donations.
+
+	Features:
+	- Coin spawning and animation
+	- Particle effects on spawn/pickup
+	- Smooth tracking to target player
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Debris = game:GetService("Debris")
-
-----------------
--- References --
-----------------
 
 local debrisFolder = workspace.Debris
 
@@ -22,27 +23,15 @@ local objectsFolder = instancesFolder.Objects
 local effectsFolder = instancesFolder.Effects
 local coinPrefab = objectsFolder.Coin
 
----------------
--- Constants --
----------------
-
 local LERP_SPEED_MIN = 0.08
 local LERP_SPEED_MAX = 0.25
 local LERP_DISTANCE_MAX = 50
 local VELOCITY_PREDICTION = 0.15
 
----------------
--- Variables --
----------------
-
 local coins = {}
 local spawnQueue = {}
 
----------------
--- Functions --
----------------
-
-local function spawnEffect(name, position)
+local function spawnEffect(name: string, position: Vector3): Part?
 	local template = effectsFolder:FindFirstChild(name, true)
 	if not template then return end
 
@@ -60,7 +49,7 @@ local function spawnEffect(name, position)
 
 	local maxLifetime = 0
 
-	for _, child in effect:GetDescendants() do
+	for _, child in pairs(effect:GetDescendants()) do
 		if child:IsA("ParticleEmitter") then
 			local emitCount = child:GetAttribute("emit")
 			local life = child:GetAttribute("life") or 0
@@ -90,7 +79,7 @@ local function spawnEffect(name, position)
 	return effect
 end
 
-local function getTargetInfo(userId)
+local function getTargetInfo(userId: number): (Vector3?, Vector3?)
 	local player = Players:GetPlayerByUserId(userId)
 	if not player then return nil, nil end
 
@@ -101,7 +90,7 @@ local function getTargetInfo(userId)
 	return root.Position, root.AssemblyLinearVelocity
 end
 
-local function spawnCoin(position, targetUserId)
+local function spawnCoin(position: Vector3, targetUserId: number)
 	local coin = coinPrefab:Clone()
 	coin.CFrame = CFrame.new(position)
 	coin.Anchored = true
@@ -125,7 +114,7 @@ local function spawnCoin(position, targetUserId)
 	spawnEffect("CoinSpawn", position)
 end
 
-local function update(dt)
+local function update(dt: number)
 	local now = tick()
 	for i = #spawnQueue, 1, -1 do
 		local queued = spawnQueue[i]
@@ -190,11 +179,7 @@ local function update(dt)
 	end
 end
 
-----------
--- Main --
-----------
-
-createCoinsRemoteEvent.OnClientEvent:Connect(function(data)
+createCoinsRemoteEvent.OnClientEvent:Connect(function(data: any)
 	table.insert(spawnQueue, {
 		pos = data.pos,
 		time = tick() + (data.delay or 0),

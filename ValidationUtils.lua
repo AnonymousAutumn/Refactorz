@@ -1,168 +1,135 @@
------------------
--- Init Module --
------------------
+--[[
+	ValidationUtils - Comprehensive validation predicates for Roblox types and game values.
+
+	All functions return boolean and are stateless (safe to call from any context).
+]]
 
 local ValidationUtils = {}
 
---------------
--- Services --
---------------
-
 local Players = game:GetService("Players")
-
----------------
--- Constants --
----------------
 
 local MIN_USER_ID = 1
 
----------------
--- Functions --
----------------
-
-function ValidationUtils.isValidPlayer(player)
-	if typeof(player) ~= "Instance" then
+--[[
+	Validates that a value is an active Player instance in the game.
+	Returns false if player is nil, wrong type, or has left the game.
+]]
+function ValidationUtils.isValidPlayer(player: any): boolean
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
 		return false
 	end
-	if not player:IsA("Player") then
-		return false
-	end
-	if player.Parent == nil then
-		return false
-	end
-	return Players:FindFirstChild(player.Name) ~= nil
+	-- Check player is still in the game (not leaving/left)
+	return player.Parent ~= nil and player:IsDescendantOf(Players)
 end
 
-function ValidationUtils.isValidUserId(userId)
-	if typeof(userId) ~= "number" then
-		return false
-	end
-	return userId >= MIN_USER_ID
+function ValidationUtils.isValidUserId(userId: any): boolean
+	return typeof(userId) == "number" and userId >= MIN_USER_ID
 end
 
-function ValidationUtils.isValidFrame(frame)
+function ValidationUtils.isValidFrame(frame: any): boolean
 	return typeof(frame) == "Instance" and frame:IsA("Frame") and frame.Parent ~= nil
 end
 
-function ValidationUtils.isValidTextLabel(label)
+function ValidationUtils.isValidTextLabel(label: any): boolean
 	return typeof(label) == "Instance" and label:IsA("TextLabel")
 end
 
-function ValidationUtils.isValidTextButton(button)
+function ValidationUtils.isValidTextButton(button: any): boolean
 	return typeof(button) == "Instance" and button:IsA("TextButton")
 end
 
-function ValidationUtils.isValidImageLabel(label)
+function ValidationUtils.isValidImageLabel(label: any): boolean
 	return typeof(label) == "Instance" and label:IsA("ImageLabel")
 end
 
-function ValidationUtils.isValidUIStroke(stroke)
+function ValidationUtils.isValidUIStroke(stroke: any): boolean
 	return typeof(stroke) == "Instance" and stroke:IsA("UIStroke")
 end
 
-function ValidationUtils.isValidUIGradient(gradient)
+function ValidationUtils.isValidUIGradient(gradient: any): boolean
 	return typeof(gradient) == "Instance" and gradient:IsA("UIGradient")
 end
 
-function ValidationUtils.isValidScrollingFrame(frame)
+function ValidationUtils.isValidScrollingFrame(frame: any): boolean
 	return typeof(frame) == "Instance" and frame:IsA("ScrollingFrame")
 end
 
-function ValidationUtils.isValidCharacter(character)
-	if typeof(character) ~= "Instance" then
+function ValidationUtils.isValidCharacter(character: any): boolean
+	if typeof(character) ~= "Instance" or not character:IsA("Model") then
 		return false
 	end
-	if not character:IsA("Model") then
-		return false
-	end
-	if character.Parent == nil then
-		return false
-	end
-	return character:FindFirstChild("Humanoid") ~= nil
+	return character.Parent ~= nil and character:FindFirstChild("Humanoid") ~= nil
 end
 
-function ValidationUtils.isValidHumanoid(humanoid)
-	if typeof(humanoid) ~= "Instance" then
-		return false
-	end
-	if not humanoid:IsA("Humanoid") then
+function ValidationUtils.isValidHumanoid(humanoid: any): boolean
+	if typeof(humanoid) ~= "Instance" or not humanoid:IsA("Humanoid") then
 		return false
 	end
 	return humanoid.Health > 0
 end
 
-function ValidationUtils.isValidFolder(folder)
+function ValidationUtils.isValidFolder(folder: any): boolean
 	return typeof(folder) == "Instance" and folder:IsA("Folder")
 end
 
-function ValidationUtils.isValidStringValue(value)
+function ValidationUtils.isValidStringValue(value: any): boolean
 	return typeof(value) == "Instance" and value:IsA("StringValue")
 end
 
-function ValidationUtils.isValidString(value)
+function ValidationUtils.isValidString(value: any): boolean
 	return typeof(value) == "string" and #value > 0
 end
 
-function ValidationUtils.isValidNumber(value)
+--[[
+	Validates a number is finite (not NaN or infinity).
+]]
+function ValidationUtils.isValidNumber(value: any): boolean
 	if typeof(value) ~= "number" then
 		return false
 	end
+	-- NaN check: NaN is the only value that doesn't equal itself
 	if value ~= value then
 		return false
 	end
-	if math.abs(value) == math.huge then
-		return false
-	end
-	return true
+	-- Infinity check
+	return math.abs(value) ~= math.huge
 end
 
-function ValidationUtils.isValidPositiveInteger(value)
-	if typeof(value) ~= "number" then
-		return false
-	end
-	if value <= 0 then
-		return false
-	end
-	return value == math.floor(value)
+function ValidationUtils.isValidPositiveInteger(value: any): boolean
+	return typeof(value) == "number" and value > 0 and value == math.floor(value)
 end
 
-function ValidationUtils.isValidNonNegativeInteger(value)
-	if typeof(value) ~= "number" then
-		return false
-	end
-	if value < 0 then
-		return false
-	end
-	return value == math.floor(value)
+function ValidationUtils.isValidNonNegativeInteger(value: any): boolean
+	return typeof(value) == "number" and value >= 0 and value == math.floor(value)
 end
 
-function ValidationUtils.isValidBoolean(value)
+function ValidationUtils.isValidBoolean(value: any): boolean
 	return typeof(value) == "boolean"
 end
 
-function ValidationUtils.isValidTable(value)
+function ValidationUtils.isValidTable(value: any): boolean
 	return typeof(value) == "table"
 end
 
-function ValidationUtils.isInRange(value, min, max)
+function ValidationUtils.isInRange(value: number, min: number, max: number): boolean
 	return value >= min and value <= max
 end
 
-function ValidationUtils.isValidRobuxAmount(amount)
-	if not ValidationUtils.isValidNumber(amount) then
-		return false
-	end
-	if amount < 1 then
-		return false
-	end
-	return amount == math.floor(amount)
+function ValidationUtils.isValidRobuxAmount(amount: any): boolean
+	return ValidationUtils.isValidNumber(amount) and amount >= 1 and amount == math.floor(amount)
 end
 
-function ValidationUtils.isValidDonationAmount(amount)
+function ValidationUtils.isValidDonationAmount(amount: any): boolean
 	return ValidationUtils.isValidNumber(amount) and amount > 0
 end
 
-function ValidationUtils.isValidUsername(username)
+--[[
+	Validates Roblox username format:
+	- 3-20 characters
+	- Alphanumeric and underscores only
+	- No consecutive underscores
+]]
+function ValidationUtils.isValidUsername(username: any): boolean
 	if not ValidationUtils.isValidString(username) then
 		return false
 	end
@@ -172,10 +139,12 @@ function ValidationUtils.isValidUsername(username)
 		return false
 	end
 
+	-- Only alphanumeric and underscores allowed
 	if not string.match(username, "^[%w_]+$") then
 		return false
 	end
 
+	-- No consecutive underscores
 	if string.find(username, "__") then
 		return false
 	end
@@ -183,23 +152,23 @@ function ValidationUtils.isValidUsername(username)
 	return true
 end
 
-function ValidationUtils.isValidRankPosition(rank)
+function ValidationUtils.isValidRankPosition(rank: any): boolean
 	return ValidationUtils.isValidPositiveInteger(rank)
 end
 
-function ValidationUtils.isValidRankIndex(index)
+function ValidationUtils.isValidRankIndex(index: any): boolean
 	return ValidationUtils.isValidNonNegativeInteger(index)
 end
 
-function ValidationUtils.isValidStatisticValue(value)
+function ValidationUtils.isValidStatisticValue(value: any): boolean
 	return ValidationUtils.isValidNumber(value) and value >= 0
 end
 
-function ValidationUtils.isValidDisplayCount(count)
+function ValidationUtils.isValidDisplayCount(count: any): boolean
 	return ValidationUtils.isValidPositiveInteger(count) and count <= 100
 end
 
-function ValidationUtils.hasRequiredFields(data, fields)
+function ValidationUtils.hasRequiredFields(data: any, fields: {string}): boolean
 	if not ValidationUtils.isValidTable(data) then
 		return false
 	end
@@ -213,38 +182,31 @@ function ValidationUtils.hasRequiredFields(data, fields)
 	return true
 end
 
-function ValidationUtils.validateWithError(isValid, errorMessage)
+function ValidationUtils.validateWithError(isValid: boolean, errorMessage: string): {isValid: boolean, error: string?}
 	return {
 		isValid = isValid,
 		error = if isValid then nil else errorMessage,
 	}
 end
 
-function ValidationUtils.isValidTrackIndex(index, maxIndex)
-	if not ValidationUtils.isValidPositiveInteger(index) then
-		return false
-	end
-	return index <= maxIndex
+function ValidationUtils.isValidTrackIndex(index: any, maxIndex: number): boolean
+	return ValidationUtils.isValidPositiveInteger(index) and index <= maxIndex
 end
 
-function ValidationUtils.isValidUniverseId(universeId)
+function ValidationUtils.isValidUniverseId(universeId: any): boolean
 	return ValidationUtils.isValidPositiveInteger(universeId)
 end
 
-function ValidationUtils.isValidPlaceId(placeId)
+function ValidationUtils.isValidPlaceId(placeId: any): boolean
 	return ValidationUtils.isValidPositiveInteger(placeId)
 end
 
-function ValidationUtils.isValidGameId(gameId)
+function ValidationUtils.isValidGameId(gameId: any): boolean
 	return ValidationUtils.isValidPlaceId(gameId)
 end
 
-function ValidationUtils.isValidGamepassId(gamepassId)
+function ValidationUtils.isValidGamepassId(gamepassId: any): boolean
 	return ValidationUtils.isValidPositiveInteger(gamepassId)
 end
-
--------------------
--- Return Module --
--------------------
 
 return ValidationUtils

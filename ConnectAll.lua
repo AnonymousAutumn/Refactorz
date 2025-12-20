@@ -1,30 +1,21 @@
 --!strict
 
 --[[
-	Calls the provided handler when any of the provided signals are fired.
-	Returns an array of the connections made.
+	ConnectAll - Batch-connects multiple signals to a single handler.
+
+	Returns an array of connections that can be individually disconnected.
 
 	Example usage:
-		local handler = print
+		local connections = connectAll({signalA, signalB}, print)
 
-		local connections = connectAll(
-			{signalA, signalB},
-			handler
-		)
+		eventA:Fire("Hello from A")
+		eventB:Fire("Hello from B")
 
-		eventA:Fire("1 Hello,", "world!")
-		eventB:Fire("2 foo", "bar")
-
-		for _, connection in ipairs(connections) do
+		-- Cleanup
+		for _, connection in connections do
 			connection:Disconnect()
 		end
-
-	Output:
-		1 Hello, world!
-		2 foo bar
---]]
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+]]
 
 local Signal = require(script.Parent.Signal)
 
@@ -33,7 +24,7 @@ type Handler = (...any) -> ...any
 local function connectAll(signals: { RBXScriptSignal | Signal.ClassType }, handler: Handler)
 	local connections: { RBXScriptConnection | Signal.SignalConnection } = {}
 
-	for _, signal in ipairs(signals) do
+	for _, signal in signals do
 		local connection: RBXScriptConnection | Signal.SignalConnection = (signal :: any):Connect(handler)
 		table.insert(connections, connection)
 	end

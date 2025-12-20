@@ -1,16 +1,17 @@
---------------
--- Services --
---------------
+--[[
+	PassUI - Client-side gamepass shop interface controller.
+
+	Features:
+	- Shop open/close animations
+	- Gamepass button interaction handling
+	- Session management with cleanup
+]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -30,10 +31,6 @@ local NotificationHelper = require(modulesFolder.Utilities.NotificationHelper)
 local uiSoundGroup = SoundService.UI
 local feedbackSoundGroup = SoundService.Feedback
 
----------------
--- Constants --
----------------
-
 local SHOP_ANIMATION_DURATION = 0.2
 local SHOP_CLOSED_VERTICAL_OFFSET = -95
 local SHOP_OPENED_VERTICAL_OFFSET = -80
@@ -44,41 +41,33 @@ local SHOP_ANIMATION_TWEEN_INFO = TweenInfo.new(
 	Enum.EasingDirection.Out
 )
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
-local sessionTweens = {}
+local sessionTweens: { Tween } = {}
 
-local gamePassShopMainFrame = nil
-local gamePassItemsDisplayFrame = nil
-local gamePassItemsLayoutManager = nil
+local gamePassShopMainFrame: Frame? = nil
+local gamePassItemsDisplayFrame: ScrollingFrame? = nil
+local gamePassItemsLayoutManager: UIListLayout? = nil
 
 local buttonWrapperInitialized = false
 
----------------
--- Functions --
----------------
-
-local function isValidProductInfo(info)
+local function isValidProductInfo(info: any): boolean
 	return typeof(info) == "table"
 		and info.Creator ~= nil
 		and typeof(info.Creator) == "table"
 		and ValidationUtils.isValidNumber(info.Creator.Id) and info.Creator.Id > 0
 end
 
-local function safeExecute(func, _errorMessage)
+local function safeExecute(func: () -> (), _errorMessage: string?): boolean
 	local success = pcall(func)
 	return success
 end
 
-local function trackConnection(connection)
+local function trackConnection(connection: RBXScriptConnection): RBXScriptConnection
 	connectionsMaid:add(connection)
 	return connection
 end
 
-local function trackTween(tween)
+local function trackTween(tween: Tween): Tween
 	table.insert(sessionTweens, tween)
 	return tween
 end
@@ -96,7 +85,7 @@ local function updateGamePassItemsScrollingCanvasSize()
 	end, "Error updating canvas size")
 end
 
-local function createShopOpeningAnimation()
+local function createShopOpeningAnimation(): Tween?
 	if not gamePassShopMainFrame then
 		return nil
 	end
@@ -125,7 +114,7 @@ local function animateGamePassShopInterfaceOpen()
 	end, "Error animating shop open")
 end
 
-local function isGamePassButton(element)
+local function isGamePassButton(element: Instance): boolean
 	return element:IsA("TextButton")
 end
 
@@ -136,7 +125,7 @@ local function clearAllGamePassItemsFromDisplay()
 
 	safeExecute(function()
 		local children = gamePassItemsDisplayFrame:GetChildren()
-		for _, childElement in children do
+		for _, childElement in pairs(children) do
 			if isGamePassButton(childElement) then
 				childElement:Destroy()
 			end
@@ -145,7 +134,7 @@ local function clearAllGamePassItemsFromDisplay()
 	end, "Error clearing GamePass items")
 end
 
-local function handleGamePassPurchaseButtonInteraction(button)
+local function handleGamePassPurchaseButtonInteraction(button: TextButton)
 	local assetId = button:GetAttribute("AssetId")
 
 	PurchaseWrapper.attemptPurchase({
@@ -162,7 +151,7 @@ local function handleGamePassPurchaseButtonInteraction(button)
 	})
 end
 
-local function setupGamePassButtonInteractionHandlers(gamePassButton)
+local function setupGamePassButtonInteractionHandlers(gamePassButton: TextButton)
 	ButtonWrapper.setupButton({
 		button = gamePassButton,
 		onClick = handleGamePassPurchaseButtonInteraction,
@@ -211,7 +200,7 @@ end
 local function cleanupSession()
 	connectionsMaid:disconnect()
 
-	for _, tween in ipairs(sessionTweens) do
+	for _, tween in pairs(sessionTweens) do
 		pcall(function()
 			if tween then
 				tween:Cancel()
@@ -225,8 +214,7 @@ local function cleanupSession()
 	gamePassItemsLayoutManager = nil
 end
 
-local function setupSession()
-
+local function setupSession(): boolean
 	cleanupSession()
 
 	local screenGui = playerGui:WaitForChild("PassUI")
@@ -269,7 +257,6 @@ end
 local function initialize()
 	setupSession()
 
-	-- re-init on respawn
 	localPlayer.CharacterAdded:Connect(function()
 		setupSession()
 	end)
@@ -280,9 +267,5 @@ local function initialize()
 		end
 	end)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

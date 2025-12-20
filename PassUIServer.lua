@@ -1,13 +1,15 @@
---------------
--- Services --
---------------
+--[[
+	PassUIServer - Server-side gamepass UI management.
+
+	Features:
+	- Manages gamepass display for players
+	- Handles gift interface toggling
+	- Refresh cooldown management
+	- Player state tracking and cleanup
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -32,10 +34,6 @@ local GiftInterface = require(script.GiftInterface)
 local StateManager = require(script.StateManager)
 local DataLabelManager = require(script.DataLabelManager)
 
----------------
--- Constants --
----------------
-
 local PLAYER_ATTRIBUTES_REFERENCE = {
 	Viewing = "Viewing",
 	ViewingOwnPasses = "ViewingOwnPasses",
@@ -44,30 +42,22 @@ local PLAYER_ATTRIBUTES_REFERENCE = {
 	PromptsDisabled = "PromptsDisabled",
 }
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 
-local playerCooldownRegistry = {}
-local playerUIStates = {}
+local playerCooldownRegistry: { [Player]: boolean } = {}
+local playerUIStates: { [Player]: any } = {}
 
 StateManager.playerUIStates = playerUIStates
 StateManager.playerCooldownRegistry = playerCooldownRegistry
 CooldownManager.playerUIStates = playerUIStates
 CooldownManager.playerCooldownRegistry = playerCooldownRegistry
 
----------------
--- Functions --
----------------
-
-local function trackGlobalConnection(connection)
+local function trackGlobalConnection(connection: RBXScriptConnection): RBXScriptConnection
 	connectionsMaid:add(connection)
 	return connection
 end
 
-local function retrievePlayerDonationInterface(targetPlayer, isInGiftingMode)
+local function retrievePlayerDonationInterface(targetPlayer: Player, isInGiftingMode: boolean): any?
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		warn(`[{script.Name}] Invalid player for UI retrieval`)
 		return nil
@@ -108,7 +98,7 @@ local function retrievePlayerDonationInterface(targetPlayer, isInGiftingMode)
 	return interfaceComponents
 end
 
-local function refreshDataDisplayLabel(isInGiftingMode, viewingContext, shouldPlayAnimation)
+local function refreshDataDisplayLabel(isInGiftingMode: boolean, viewingContext: any, shouldPlayAnimation: boolean?)
 	if not ValidationUtils.isValidPlayer(viewingContext.Viewer) then
 		warn(`[{script.Name}] Invalid viewer for data label refresh`)
 		return
@@ -136,7 +126,7 @@ local function refreshDataDisplayLabel(isInGiftingMode, viewingContext, shouldPl
 	end
 end
 
-local function handleGiftRecipientDisplay(userInterface, currentViewer, giftRecipientRef)
+local function handleGiftRecipientDisplay(userInterface: any, currentViewer: Player, giftRecipientRef: Player | number)
 	local recipientUserId = nil
 	if typeof(giftRecipientRef) == "number" then
 		if ValidationUtils.isValidUserId(giftRecipientRef) then
@@ -163,7 +153,7 @@ local function handleGiftRecipientDisplay(userInterface, currentViewer, giftReci
 	DisplayRenderer.displayGamepasses(userInterface.ItemFrame, recipientGamepasses, currentViewer, recipientUserId)
 end
 
-local function handleStandardPlayerDisplay(userInterface, currentViewer, targetPlayerToView, viewingContext, shouldReloadData)
+local function handleStandardPlayerDisplay(userInterface: any, currentViewer: Player, targetPlayerToView: Player, viewingContext: any, shouldReloadData: boolean)
 	if not ValidationUtils.isValidPlayer(targetPlayerToView) then
 		warn(`[{script.Name}] Invalid target player for viewing`)
 		return
@@ -192,7 +182,7 @@ local function handleStandardPlayerDisplay(userInterface, currentViewer, targetP
 	DisplayRenderer.displayGamepasses(userInterface.ItemFrame, targetPlayerGamepasses, currentViewer, targetPlayerToView.UserId)
 end
 
-local function populateGamepassDisplayFrame(viewingContext, shouldReloadData, isInGiftingMode)
+local function populateGamepassDisplayFrame(viewingContext: any, shouldReloadData: boolean?, isInGiftingMode: boolean?)
 	if not ValidationUtils.isValidPlayer(viewingContext.Viewer) then
 		warn(`[{script.Name}] Invalid viewer for gamepass display`)
 		return
@@ -231,19 +221,13 @@ local function populateGamepassDisplayFrame(viewingContext, shouldReloadData, is
 	end
 end
 
-----------------------
--- Export Functions --
-----------------------
-
 CooldownManager.populateGamepassDisplayFrame = populateGamepassDisplayFrame
 GiftInterface.retrievePlayerDonationInterface = retrievePlayerDonationInterface
 GiftInterface.refreshDataDisplayLabel = refreshDataDisplayLabel
 GiftInterface.populateGamepassDisplayFrame = populateGamepassDisplayFrame
 GiftInterface.getOrCreatePlayerUIState = StateManager.getOrCreatePlayerUIState
 
----------------------
-
-local function configureUIVisibility(userInterface, currentViewer, isViewingOwnPasses, hasCloseButton)
+local function configureUIVisibility(userInterface: any, currentViewer: Player, isViewingOwnPasses: boolean, hasCloseButton: boolean)
 	userInterface.MainFrame.Visible = true
 	userInterface.CloseButton.Visible = hasCloseButton
 
@@ -260,7 +244,7 @@ local function configureUIVisibility(userInterface, currentViewer, isViewingOwnP
 	end
 end
 
-local function handleDonationInterfaceToggle(viewingData)
+local function handleDonationInterfaceToggle(viewingData: any)
 	if not ValidationUtils.isValidPlayer(viewingData.Viewer) then
 		warn(`[{script.Name}] Invalid viewer for interface toggle`)
 		return
@@ -343,9 +327,5 @@ local function initialize()
 
 	game:BindToClose(cleanup)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

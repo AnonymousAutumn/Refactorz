@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	PassVerification - Verifies and applies gamepass ownership benefits.
+
+	Features:
+	- Checks car keys and stand access pass ownership
+	- Grants gamepass benefits on ownership
+	- Handles respawn for persistent benefits
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -22,17 +23,9 @@ local Connections = require(modulesFolder.Wrappers.Connections)
 local PurchasesWrapper = require(modulesFolder.Wrappers.Purchases)
 local GameConfig = require(configurationFolder.GameConfig)
 
----------------
--- Constants --
----------------
-
 local MONETIZATION = GameConfig.MONETIZATION
 local CAR_KEYS_PASS = MONETIZATION.CAR_KEYS
 local STAND_ACCESS_PASS = MONETIZATION.STAND_ACCESS
-
----------------
--- Variables --
----------------
 
 local connectionsMaid = Connections.new()
 
@@ -52,8 +45,7 @@ local function enableUnclaimStandButton()
 	button.Visible = true
 end
 
-
-local function onAttributeChanged(attributeName)
+local function onAttributeChanged(attributeName: string)
 	local attributeValue = localPlayer:GetAttribute(attributeName)
 
 	if attributeValue ~= true then
@@ -75,9 +67,8 @@ local function onAttributeChanged(attributeName)
 	end
 end
 
-local function onCharacterAdded(character)
+local function onCharacterAdded(character: Model)
 	if ownsCarKeys then
-
 		task.defer(function()
 			giveCarKeys()
 		end)
@@ -111,9 +102,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

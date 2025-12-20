@@ -1,25 +1,18 @@
------------------
--- Init Module --
------------------
+--[[
+	ComponentBuilder - Builds and validates UI component references.
+
+	Features:
+	- Safely builds UI component tables from screen GUIs
+	- Validates required components exist
+	- Provides component validation utility
+]]
 
 local ComponentBuilder = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local PassUIUtilities = require(modulesFolder.Utilities.PassUIUtilities)
-
----------------
--- Constants --
----------------
 
 local UI_COMPONENT_NAMES = {
 	"MainFrame",
@@ -34,18 +27,27 @@ local UI_COMPONENT_NAMES = {
 	"LinkTextBox",
 }
 
----------------
--- Functions --
----------------
+export type UIComponents = {
+	MainFrame: Frame,
+	HelpFrame: Frame?,
+	ItemFrame: ScrollingFrame,
+	LoadingLabel: TextLabel,
+	CloseButton: TextButton,
+	RefreshButton: TextButton,
+	TimerLabel: TextLabel,
+	DataLabel: TextLabel,
+	InfoLabel: TextLabel?,
+	LinkTextBox: TextBox?,
+}
 
-local function validateUIComponents(components)
+local function validateUIComponents(components: { [string]: Instance? }): boolean
 	if typeof(components) ~= "table" then
 		return false
 	end
-	
+
 	for i = 1, #UI_COMPONENT_NAMES do
 		local componentName = UI_COMPONENT_NAMES[i]
-		
+
 		if not components[componentName] then
 			warn(`[{script.Name}] Missing required UI component: {componentName}`)
 			return false
@@ -54,7 +56,11 @@ local function validateUIComponents(components)
 	return true
 end
 
-function ComponentBuilder.buildUIComponents(donationInterface)
+--[[
+	Builds a table of UI component references from a donation interface.
+	Returns nil if any required components are missing.
+]]
+function ComponentBuilder.buildUIComponents(donationInterface: ScreenGui): UIComponents?
 	local primaryFrame = donationInterface:FindFirstChild("MainFrame")
 	if not primaryFrame then
 		return nil
@@ -110,12 +116,11 @@ function ComponentBuilder.buildUIComponents(donationInterface)
 	return components
 end
 
-function ComponentBuilder.validateUIComponents(components)
+--[[
+	Validates that all required UI components are present.
+]]
+function ComponentBuilder.validateUIComponents(components: { [string]: Instance? }): boolean
 	return validateUIComponents(components)
 end
-
--------------------
--- Return Module --
--------------------
 
 return ComponentBuilder

@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	HttpClient - Makes HTTP requests with retry and rate limit handling.
+
+	Features:
+	- Automatic retry with exponential backoff
+	- Rate limit detection and handling
+	- Request timeout protection
+]]
 
 local HttpClient = {}
 
---------------
--- Services --
---------------
-
 local HttpService = game:GetService("HttpService")
-
----------------
--- Constants --
----------------
 
 local RETRY_ATTEMPTS = 3
 local RETRY_DELAY = 1
@@ -29,24 +26,34 @@ local ERROR_MESSAGES = {
 	RATE_LIMITED = "API rate limit exceeded, retrying...",
 }
 
----------------
--- Functions --
----------------
+export type HttpResult = {
+	success: boolean,
+	responseData: string?,
+	statusCode: number?,
+	error: string?,
+	wasRateLimited: boolean,
+}
 
-local function calculateBackoffDelay(attemptNumber, baseDelay)
+type RetryCallback = (attempt: number, maxRetries: number, errorMessage: string) -> ()
+
+local function calculateBackoffDelay(attemptNumber: number, baseDelay: number): number
 	return baseDelay * attemptNumber
 end
 
-local function hasTimedOut(startTime, timeout)
+local function hasTimedOut(startTime: number, timeout: number): boolean
 	return os.clock() - startTime > timeout
 end
 
-local function isRateLimitError(errorMessage)
+local function isRateLimitError(errorMessage: string): boolean
 	local lowerMessage = string.lower(errorMessage)
 	return string.find(lowerMessage, "429") ~= nil or string.find(lowerMessage, "many") ~= nil
 end
 
-function HttpClient.makeRequest(url, maxRetries, onRetry)
+--[[
+	Makes an HTTP GET request with automatic retry on failure.
+	Returns an HttpResult with success status, response data, and error information.
+]]
+function HttpClient.makeRequest(url: string, maxRetries: number?, onRetry: RetryCallback?): HttpResult
 	local retries = maxRetries or RETRY_ATTEMPTS
 	local lastError = nil
 	local lastStatusCode = nil
@@ -105,9 +112,5 @@ function HttpClient.makeRequest(url, maxRetries, onRetry)
 		wasRateLimited = lastWasRateLimited,
 	}
 end
-
--------------------
--- Return Module --
--------------------
 
 return HttpClient

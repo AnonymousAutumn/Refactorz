@@ -1,18 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	PassesLoader - Fetches game passes from Roblox API for players and universes.
+
+	Features:
+	- Fetches all gamepasses from a universe with pagination
+	- Fetches all games owned by a player
+	- Aggregates gamepasses from all player-owned games
+	- Request statistics tracking
+]]
 
 local PassesLoader = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration
@@ -22,10 +20,6 @@ local GameConfig = require(configurationFolder.GameConfig)
 local HttpClient = require(script.HttpClient)
 local ResponseParser = require(script.ResponseParser)
 local DataProcessor = require(script.DataProcessor)
-
----------------
--- Constants --
----------------
 
 local API_RATE_LIMIT_DELAY = 0.2
 
@@ -37,6 +31,15 @@ local ERROR_MESSAGES = {
 	INVALID_PLAYER_ID = "Invalid player ID",
 }
 
+export type GamepassData = {
+	Id: number,
+	Name: string,
+	Icon: string,
+	Price: number,
+}
+
+export type FetchResult<T> = (boolean, string, T?)
+
 local requestStats = {
 	totalRequests = 0,
 	successfulRequests = 0,
@@ -44,11 +47,7 @@ local requestStats = {
 	rateLimitHits = 0,
 }
 
----------------
--- Functions --
----------------
-
-local function updateRequestStats(success, wasRateLimited)
+local function updateRequestStats(success: boolean, wasRateLimited: boolean)
 	requestStats.totalRequests += 1
 
 	if success then
@@ -61,7 +60,7 @@ local function updateRequestStats(success, wasRateLimited)
 	end
 end
 
-local function validateGamepassResponse(decodedData, universeId)
+local function validateGamepassResponse(decodedData: any, universeId: number): boolean
 	if not decodedData.gamePasses or type(decodedData.gamePasses) ~= "table" then
 		warn(`[{script.Name}] Invalid gamepass data structure for universe {universeId}`)
 		return false
@@ -69,7 +68,7 @@ local function validateGamepassResponse(decodedData, universeId)
 	return true
 end
 
-local function validateGamesResponse(decodedData, playerId)
+local function validateGamesResponse(decodedData: any, playerId: number): boolean
 	if not decodedData.data or type(decodedData.data) ~= "table" then
 		warn(`[{script.Name}] Invalid games data structure for player {playerId}`)
 		return false
@@ -77,7 +76,11 @@ local function validateGamesResponse(decodedData, playerId)
 	return true
 end
 
-function PassesLoader:FetchGamepassesFromUniverseId(universeId)
+--[[
+	Fetches all gamepasses from a universe.
+	Returns (success, errorMessage, gamepasses).
+]]
+function PassesLoader:FetchGamepassesFromUniverseId(universeId: number): (boolean, string, {GamepassData}?)
 	if not ValidationUtils.isValidUniverseId(universeId) then
 		warn(`[{script.Name}] Invalid universe ID: {tostring(universeId)}`)
 
@@ -149,7 +152,7 @@ function PassesLoader:FetchGamepassesFromUniverseId(universeId)
 
 		-- Process this page's gamepasses
 		local processResult = DataProcessor.processGamepasses(pageParseResult.data.gamePasses)
-		for _, gamepassData in processResult.gamepasses do
+		for _, gamepassData in pairs(processResult.gamepasses) do
 			table.insert(allGamepasses, gamepassData)
 		end
 
@@ -160,7 +163,11 @@ function PassesLoader:FetchGamepassesFromUniverseId(universeId)
 	return true, "", allGamepasses
 end
 
-function PassesLoader:FetchPlayerOwnedGames(playerId)
+--[[
+	Fetches all games owned by a player.
+	Returns (success, errorMessage, universeIds).
+]]
+function PassesLoader:FetchPlayerOwnedGames(playerId: number): (boolean, string, {number}?)
 	if not ValidationUtils.isValidUserId(playerId) then
 		warn(`[{script.Name}] Invalid player ID: {tostring(playerId)}`)
 
@@ -208,7 +215,7 @@ function PassesLoader:FetchPlayerOwnedGames(playerId)
 		local pageGameIds = DataProcessor.processGames(parseResult.data.data)
 
 		-- Add to collection
-		for _, universeId in pageGameIds do
+		for _, universeId in pairs(pageGameIds) do
 			table.insert(allUniverseIds, universeId)
 		end
 
@@ -225,7 +232,11 @@ function PassesLoader:FetchPlayerOwnedGames(playerId)
 	return true, "", allUniverseIds
 end
 
-function PassesLoader:FetchAllPlayerGamepasses(playerId)
+--[[
+	Fetches all gamepasses from all games owned by a player.
+	Returns (success, errorMessage, gamepasses).
+]]
+function PassesLoader:FetchAllPlayerGamepasses(playerId: number): (boolean, string, {GamepassData}?)
 	-- First, fetch all games the player owns
 	local gamesSuccess, gamesError, playerOwnedGames = self:FetchPlayerOwnedGames(playerId)
 
@@ -239,12 +250,12 @@ function PassesLoader:FetchAllPlayerGamepasses(playerId)
 	end
 
 	-- Fetch gamepasses from each game
-	local aggregatedGamepasses = {}
+	local aggregatedGamepasses: {GamepassData} = {}
 	local successfulFetches = 0
 	local failedFetches = 0
 	local skippedUniverses = 0
 
-	for index, gameUniverseId in playerOwnedGames do
+	for index, gameUniverseId in pairs(playerOwnedGames) do
 		local gamepassSuccess, gamepassError, gameGamepasses = self:FetchGamepassesFromUniverseId(gameUniverseId)
 
 		if gamepassSuccess and gameGamepasses then
@@ -253,7 +264,7 @@ function PassesLoader:FetchAllPlayerGamepasses(playerId)
 			if #gameGamepasses == 0 then
 				skippedUniverses += 1
 			else
-				for _, gamepassData in gameGamepasses do
+				for _, gamepassData in pairs(gameGamepasses) do
 					table.insert(aggregatedGamepasses, gamepassData)
 				end
 			end

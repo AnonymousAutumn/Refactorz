@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	ResponseParser - Parses and validates JSON API responses.
+
+	Features:
+	- JSON decoding with error handling
+	- API error extraction from response body
+	- Structured parse result format
+]]
 
 local ResponseParser = {}
 
---------------
--- Services --
---------------
-
 local HttpService = game:GetService("HttpService")
-
----------------
--- Constants --
----------------
 
 local ERROR_MESSAGES = {
 	DEFAULT = "There was an error. Try again!",
@@ -21,11 +18,13 @@ local ERROR_MESSAGES = {
 	EMPTY_RESPONSE = "Cannot decode empty response data",
 }
 
----------------
--- Functions --
----------------
+export type ParseResult = {
+	success: boolean,
+	errorMessage: string,
+	data: any?,
+}
 
-local function decodeJsonResponse(responseData)
+local function decodeJsonResponse(responseData: string?): (boolean, any?)
 	if not responseData or responseData == "" then
 		warn(`[{script.Name}] {ERROR_MESSAGES.EMPTY_RESPONSE}`)
 		return false, nil
@@ -43,7 +42,7 @@ local function decodeJsonResponse(responseData)
 	return true, decodedData
 end
 
-local function extractApiErrorMessage(decodedData)
+local function extractApiErrorMessage(decodedData: any): string?
 	if decodedData.Errors and type(decodedData.Errors) == "table" and #decodedData.Errors > 0 then
 		local apiError = decodedData.Errors[1]
 		local errorMessage = apiError.message or apiError.Message or ERROR_MESSAGES.DEFAULT
@@ -62,7 +61,11 @@ local function extractApiErrorMessage(decodedData)
 	return nil
 end
 
-function ResponseParser.parseResponse(responseData)
+--[[
+	Parses an API response string into structured data.
+	Returns a ParseResult with success status, error message, and decoded data.
+]]
+function ResponseParser.parseResponse(responseData: string?): ParseResult
 	if not responseData then
 		warn(`[{script.Name}] API request failed: {ERROR_MESSAGES.NO_RESPONSE}`)
 		return {
@@ -97,9 +100,5 @@ function ResponseParser.parseResponse(responseData)
 		data = decodedData,
 	}
 end
-
--------------------
--- Return Module --
--------------------
 
 return ResponseParser

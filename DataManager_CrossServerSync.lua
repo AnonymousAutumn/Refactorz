@@ -1,47 +1,47 @@
------------------
--- Init Module --
------------------
+--[[
+	CrossServerSync - Manages cross-server messaging with retry logic.
+
+	Features:
+	- MessagingService subscription with automatic retry
+	- Update message validation
+	- Configurable retry attempts and backoff delay
+]]
 
 local CrossServerSync = {}
 CrossServerSync.__index = CrossServerSync
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MessagingService = game:GetService("MessagingService")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local GameConfig = require(configurationFolder.GameConfig)
 
----------------
--- Constants --
----------------
-
 local RETRY_DELAY = 5
 local MAX_RETRY_ATTEMPTS = 3
 
 local VALID_STATISTICS = { "Donated", "Raised", "Wins" }
 
----------------
--- Functions --
----------------
+export type UpdateData = {
+	UserId: number,
+	Stat: string,
+	Value: number,
+}
 
+type MessageHandler = (message: any) -> ()
+
+--[[
+	Creates a new CrossServerSync instance.
+]]
 function CrossServerSync.new()
 	local self = setmetatable({}, CrossServerSync) 
 	self.connection = nil
 	return self 
 end
 
-local function isValidStatistic(statisticName)
-	for _, name in VALID_STATISTICS do
+local function isValidStatistic(statisticName: string): boolean
+	for _, name in pairs(VALID_STATISTICS) do
 		if name == statisticName then
 			return true
 		end
@@ -49,11 +49,11 @@ local function isValidStatistic(statisticName)
 	return false
 end
 
-local function isValidValue(value)
+local function isValidValue(value: any): boolean
 	return type(value) == "number"
 end
 
-local function extractUpdateData(message)
+local function extractUpdateData(message: any): UpdateData?
 	if type(message) ~= "table" then
 		return nil
 	end
@@ -66,7 +66,10 @@ local function extractUpdateData(message)
 	return payload
 end
 
-function CrossServerSync.validateUpdateMessage(message)
+--[[
+	Validates a cross-server update message structure.
+]]
+function CrossServerSync.validateUpdateMessage(message: any): boolean
 	local updateData = extractUpdateData(message)
 	if not updateData then
 		return false
@@ -87,7 +90,11 @@ function CrossServerSync.validateUpdateMessage(message)
 	return true
 end
 
-function CrossServerSync.extractUpdate(message)
+--[[
+	Extracts and validates update data from a message.
+	Returns nil if validation fails.
+]]
+function CrossServerSync.extractUpdate(message: any): UpdateData?
 	if not CrossServerSync.validateUpdateMessage(message) then
 		return nil
 	end
@@ -95,11 +102,11 @@ function CrossServerSync.extractUpdate(message)
 	return extractUpdateData(message)
 end
 
-local function calculateRetryDelay(attemptNumber)
+local function calculateRetryDelay(attemptNumber: number): number
 	return RETRY_DELAY * attemptNumber
 end
 
-local function establishConnection(topic, handler, attemptNumber, maxRetries)
+local function establishConnection(topic: string, handler: MessageHandler, attemptNumber: number, maxRetries: number): RBXScriptConnection?
 	if attemptNumber > maxRetries then
 		warn(`[{script.Name}] Failed to connect after {maxRetries} attempts`)
 		return nil
@@ -124,7 +131,11 @@ local function establishConnection(topic, handler, attemptNumber, maxRetries)
 	end
 end
 
-function CrossServerSync:subscribe(topic, handler, maxRetries)
+--[[
+	Subscribes to a MessagingService topic with automatic retry.
+	Returns true if subscription succeeded.
+]]
+function CrossServerSync:subscribe(topic: string, handler: MessageHandler, maxRetries: number?): boolean
 	local retries = maxRetries or MAX_RETRY_ATTEMPTS
 
 	self.connection = establishConnection(topic, handler, 1, retries)
@@ -132,6 +143,9 @@ function CrossServerSync:subscribe(topic, handler, maxRetries)
 	return self.connection ~= nil
 end
 
+--[[
+	Disconnects from the current subscription.
+]]
 function CrossServerSync:disconnect()
 	if self.connection then
 		pcall(function()
@@ -141,11 +155,17 @@ function CrossServerSync:disconnect()
 	end
 end
 
-function CrossServerSync:isConnected()
+--[[
+	Returns whether the sync is currently connected.
+]]
+function CrossServerSync:isConnected(): boolean
 	return self.connection ~= nil
 end
 
-function CrossServerSync.createLeaderboardSync(handler)
+--[[
+	Factory function to create a sync instance for leaderboard updates.
+]]
+function CrossServerSync.createLeaderboardSync(handler: MessageHandler)
 	local sync = CrossServerSync.new()
 	local topic = GameConfig.MESSAGING_SERVICE_CONFIG.LEADERBOARD_UPDATE
 
@@ -153,9 +173,5 @@ function CrossServerSync.createLeaderboardSync(handler)
 
 	return sync
 end
-
--------------------
--- Return Module --
--------------------
 
 return CrossServerSync

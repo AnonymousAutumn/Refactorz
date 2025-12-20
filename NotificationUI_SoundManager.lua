@@ -1,24 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	SoundManager - Plays notification sounds by type.
+
+	Features:
+	- Type-based sound selection
+	- Safe sound playback with error handling
+]]
 
 local SoundManager = {}
 
---------------
--- Services --
---------------
-
 local SoundService = game:GetService("SoundService")
 
-----------------
--- References --
-----------------
-
 local feedbackGroup = SoundService.Feedback
-
----------------
--- Constants --
----------------
 
 local SOUND_NAMES = {
 	Success = "Success",
@@ -26,11 +18,7 @@ local SOUND_NAMES = {
 	Error = "Error",
 }
 
----------------
--- Functions --
----------------
-
-local function getSound(soundName)
+local function getSound(soundName: string): Sound?
 	local sound = feedbackGroup:FindFirstChild(soundName)
 	if sound and sound:IsA("Sound") then
 		return sound 
@@ -38,7 +26,7 @@ local function getSound(soundName)
 	return nil
 end
 
-local function playSound(soundName)
+local function playSound(soundName: string)
 	local success, errorMsg = pcall(function()
 		local sound = getSound(soundName)
 		if sound then
@@ -51,7 +39,10 @@ local function playSound(soundName)
 	end
 end
 
-function SoundManager.playForType(notificationType)
+--[[
+	Plays the sound associated with a notification type.
+]]
+function SoundManager.playForType(notificationType: string)
 	local soundName = SOUND_NAMES[notificationType]
 	if soundName then
 		playSound(soundName)
@@ -65,9 +56,5 @@ end
 function SoundManager.playError()
 	playSound(SOUND_NAMES.Error)
 end
-
--------------------
--- Return Module --
--------------------
 
 return SoundManager

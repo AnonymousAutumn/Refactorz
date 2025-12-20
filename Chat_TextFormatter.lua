@@ -1,30 +1,35 @@
------------------
--- Init Module --
------------------
+--[[
+	TextFormatter - Text formatting utilities for chat.
+
+	Features:
+	- Rich text tag stripping
+	- Template placeholder formatting
+]]
 
 local TextFormatter = {}
-
----------------
--- Constants --
----------------
 
 local RICH_TEXT_TAG_PATTERN = "(<[^<>]->)"
 local DEFAULT_TEXT_COLOR = "#FFFFFF"
 
----------------
--- Functions --
----------------
-
-function TextFormatter.stripRichTextTags(text)
+--[[
+	Strips rich text tags from a string.
+]]
+function TextFormatter.stripRichTextTags(text: string): string
 	return string.gsub(text, RICH_TEXT_TAG_PATTERN, "")
 end
 
-function TextFormatter.countFormatPlaceholders(formatString)
+--[[
+	Counts the number of %s placeholders in a format string.
+]]
+function TextFormatter.countFormatPlaceholders(formatString: string): number
 	local _, count = string.gsub(formatString, "%%s", "")
 	return count
 end
 
-function TextFormatter.formatWithTemplate(template, coloredName, colorValue, prefix)
+--[[
+	Formats text using a template with placeholders.
+]]
+function TextFormatter.formatWithTemplate(template: string, coloredName: string, colorValue: string?, prefix: string): string
 	local placeholderCount = TextFormatter.countFormatPlaceholders(template)
 
 	if placeholderCount >= 3 then
@@ -38,9 +43,5 @@ function TextFormatter.formatWithTemplate(template, coloredName, colorValue, pre
 	
 	return if prefix ~= "" then `{coloredName} {prefix}` else coloredName
 end
-
--------------------
--- Return Module --
--------------------
 
 return TextFormatter

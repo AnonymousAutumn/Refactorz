@@ -1,32 +1,38 @@
------------------
--- Init Module --
------------------
+--[[
+	NotificationQueue - Manages notification queue and display timing.
+
+	Features:
+	- Queue add/remove operations
+	- Scheduled removal with delay
+	- OOP-style class pattern
+]]
 
 local NotificationQueue = {}
 NotificationQueue.__index = NotificationQueue
 
----------------
--- Constants --
----------------
-
 local DISPLAY_DURATION = 4
 
----------------
--- Functions --
----------------
-
+--[[
+	Creates a new NotificationQueue instance.
+]]
 function NotificationQueue.new()
 	local self = setmetatable({}, NotificationQueue) 
 	self.notifications = {}
 	return self 
 end
 
-function NotificationQueue:add(frame)
+--[[
+	Adds a notification frame to the queue.
+]]
+function NotificationQueue:add(frame: Frame)
 	table.insert(self.notifications, frame)
 end
 
-function NotificationQueue:remove(frame)
-	for index, activeFrame in self.notifications do
+--[[
+	Removes a notification frame from the queue.
+]]
+function NotificationQueue:remove(frame: Frame): boolean
+	for index, activeFrame in pairs(self.notifications) do
 		if activeFrame == frame then
 			table.remove(self.notifications, index)
 			return true
@@ -35,19 +41,31 @@ function NotificationQueue:remove(frame)
 	return false
 end
 
-function NotificationQueue:getAll()
+--[[
+	Returns all notification frames in the queue.
+]]
+function NotificationQueue:getAll(): { Frame }
 	return self.notifications
 end
 
-function NotificationQueue:getCount()
+--[[
+	Returns the number of notifications in the queue.
+]]
+function NotificationQueue:getCount(): number
 	return #self.notifications
 end
 
+--[[
+	Clears all notifications from the queue.
+]]
 function NotificationQueue:clear()
 	self.notifications = {}
 end
 
-function NotificationQueue:scheduleRemoval(frame, textLabel, onRemove)
+--[[
+	Schedules a notification for removal after display duration.
+]]
+function NotificationQueue:scheduleRemoval(frame: Frame, textLabel: TextLabel, onRemove: (Frame, TextLabel) -> ())
 	task.delay(DISPLAY_DURATION, function()
 		if not frame.Parent then
 			return
@@ -57,12 +75,11 @@ function NotificationQueue:scheduleRemoval(frame, textLabel, onRemove)
 	end)
 end
 
-function NotificationQueue.getDisplayDuration()
+--[[
+	Returns the display duration constant.
+]]
+function NotificationQueue.getDisplayDuration(): number
 	return DISPLAY_DURATION
 end
-
--------------------
--- Return Module --
--------------------
 
 return NotificationQueue

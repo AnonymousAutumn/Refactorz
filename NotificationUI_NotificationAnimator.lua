@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	NotificationAnimator - Handles notification entry/exit animations.
+
+	Features:
+	- Fade in/out animations
+	- Position tweening for repositioning
+	- Special animations for warning/error types
+]]
 
 local NotificationAnimator = {}
 
---------------
--- Services --
---------------
-
 local TweenService = game:GetService("TweenService")
-
----------------
--- Constants --
----------------
 
 local ANIMATION_DURATION = {
 	STANDARD = 0.3,
@@ -37,11 +34,7 @@ local SIZE = {
 local SPACING_MULTIPLIER = 1.4
 local MIN_WIDTH_PADDING = 50
 
----------------
--- Functions --
----------------
-
-local function createTween(instance, properties, duration)
+local function createTween(instance: Instance, properties: { [string]: any }, duration: number): Tween
 	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local tween = TweenService:Create(instance, tweenInfo, properties)
 	tween:Play()
@@ -49,25 +42,25 @@ local function createTween(instance, properties, duration)
 	return tween
 end
 
-local function setInitialTransparency(textLabel, uiStroke)
+local function setInitialTransparency(textLabel: TextLabel, uiStroke: UIStroke?)
 	textLabel.TextTransparency = TRANSPARENCY.HIDDEN
 	if uiStroke then
 		uiStroke.Transparency = TRANSPARENCY.HIDDEN
 	end
 end
 
-local function animateTextFadeIn(textLabel)
+local function animateTextFadeIn(textLabel: TextLabel)
 	createTween(textLabel, {
 		TextTransparency = TRANSPARENCY.VISIBLE,
 		TextStrokeTransparency = TRANSPARENCY.VISIBLE,
 	}, ANIMATION_DURATION.STANDARD)
 end
 
-local function animateStrokeFadeIn(uiStroke)
+local function animateStrokeFadeIn(uiStroke: UIStroke)
 	createTween(uiStroke, { Transparency = TRANSPARENCY.STROKE }, ANIMATION_DURATION.STANDARD)
 end
 
-local function applySpecialAnimation(frame, uiStroke, typeColor)
+local function applySpecialAnimation(frame: Frame, uiStroke: UIStroke?, typeColor: Color3)
 	frame.Position = POSITION.SPECIAL_OFFSET
 
 	frame:TweenPosition(
@@ -83,7 +76,7 @@ local function applySpecialAnimation(frame, uiStroke, typeColor)
 	end
 end
 
-local function animateCollapse(frame)
+local function animateCollapse(frame: Frame)
 	frame:TweenSize(
 		SIZE.COLLAPSED,
 		Enum.EasingDirection.Out,
@@ -93,14 +86,14 @@ local function animateCollapse(frame)
 	)
 end
 
-local function animateTextFadeOut(textLabel)
+local function animateTextFadeOut(textLabel: TextLabel)
 	createTween(textLabel, {
 		TextTransparency = TRANSPARENCY.HIDDEN,
 		TextStrokeTransparency = TRANSPARENCY.HIDDEN,
 	}, ANIMATION_DURATION.STANDARD)
 end
 
-local function animateExpansion(frame, targetWidth)
+local function animateExpansion(frame: Frame, targetWidth: number)
 	frame:TweenSize(
 		UDim2.new(0, targetWidth, 1, 0),
 		Enum.EasingDirection.Out,
@@ -110,16 +103,25 @@ local function animateExpansion(frame, targetWidth)
 	)
 end
 
-function NotificationAnimator.calculatePosition(index, totalCount)
+--[[
+	Calculates the position for a notification based on queue index.
+]]
+function NotificationAnimator.calculatePosition(index: number, totalCount: number): UDim2
 	local yPosition = -(totalCount - index) * SPACING_MULTIPLIER
 	return UDim2.new(0.5, 0, yPosition, 0)
 end
 
-function NotificationAnimator.calculateWidth(textLabel)
+--[[
+	Calculates the required width for a notification based on text.
+]]
+function NotificationAnimator.calculateWidth(textLabel: TextLabel): number
 	return math.max(textLabel.TextBounds.X + MIN_WIDTH_PADDING, MIN_WIDTH_PADDING)
 end
 
-function NotificationAnimator.animateEntry(config)
+--[[
+	Animates a notification entry with expansion and fade-in.
+]]
+function NotificationAnimator.animateEntry(config: any)
 	setInitialTransparency(config.textLabel, config.uiStroke)
 
 	local targetWidth = NotificationAnimator.calculateWidth(config.textLabel)
@@ -137,12 +139,18 @@ function NotificationAnimator.animateEntry(config)
 	end
 end
 
-function NotificationAnimator.animateExit(frame, textLabel)
+--[[
+	Animates a notification exit with collapse and fade-out.
+]]
+function NotificationAnimator.animateExit(frame: Frame, textLabel: TextLabel)
 	animateCollapse(frame)
 	animateTextFadeOut(textLabel)
 end
 
-function NotificationAnimator.animateReposition(frame, newPosition)
+--[[
+	Animates a notification to a new position.
+]]
+function NotificationAnimator.animateReposition(frame: Frame, newPosition: UDim2)
 	frame:TweenPosition(
 		newPosition,
 		Enum.EasingDirection.Out,
@@ -152,12 +160,11 @@ function NotificationAnimator.animateReposition(frame, newPosition)
 	)
 end
 
-function NotificationAnimator.getStandardDuration()
+--[[
+	Returns the standard animation duration.
+]]
+function NotificationAnimator.getStandardDuration(): number
 	return ANIMATION_DURATION.STANDARD
 end
-
--------------------
--- Return Module --
--------------------
 
 return NotificationAnimator

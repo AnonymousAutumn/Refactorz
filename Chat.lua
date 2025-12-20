@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	Chat - Client-side chat message formatting and tag system.
+
+	Features:
+	- Custom chat tag rendering
+	- Gradient text support
+	- Robux transaction message display
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -21,23 +22,11 @@ local TextFormatter = require(script.TextFormatter)
 local TagResolver = require(script.TagResolver)
 local MessageDisplay = require(script.MessageDisplay)
 
----------------
--- Constants --
----------------
-
 local DEFAULT_TEXT_COLOR = "#FFFFFF"
-
----------------
--- Variables --
----------------
 
 local connectionsMaid = Connections.new()
 
----------------
--- Functions --
----------------
-
-local function createChatTag(tagColorOrGradient, playerName, message)
+local function createChatTag(tagColorOrGradient: Folder | UIGradient | string | any, playerName: string, message: TextChatMessage?): string
 	local prefix = if message and message.PrefixText then message.PrefixText else ""
 	local nameString = tostring(playerName)
 	local formattedName
@@ -81,7 +70,7 @@ local function createChatTag(tagColorOrGradient, playerName, message)
 	return `<font color='{colorString}'><b>{formattedName}</b></font> {prefix}`
 end
 
-local function onIncomingMessage(message)
+local function onIncomingMessage(message: TextChatMessage): TextChatMessageProperties
 	local properties = Instance.new("TextChatMessageProperties")
 	local tagColor, tagName = TagResolver.getChatTagProperties(message)
 
@@ -97,9 +86,5 @@ local function initialize()
 	
 	connectionsMaid:add(sendMessageEvent.OnClientEvent:Connect(MessageDisplay.displayRobuxTransaction))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

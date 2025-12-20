@@ -1,22 +1,19 @@
------------------
--- Init Module --
------------------
+--[[
+	CooldownManager - Manages refresh button cooldowns.
+
+	Features:
+	- Refresh button click handling
+	- Cooldown timer management
+	- Background cooldown tracking for closed UIs
+]]
 
 local CooldownManager = {}
 CooldownManager.playerUIStates = nil
 CooldownManager.playerCooldownRegistry = nil
 CooldownManager.populateGamepassDisplayFrame = nil
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -30,34 +27,25 @@ local StandManager = require(modulesFolder.Managers.Stands)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local GameConfig = require(configurationFolder.GameConfig)
 
----------------
--- Constants --
----------------
-
 local PLAYER_ATTRIBUTES_REFERENCE = {
 	ViewingOwnPasses = "ViewingOwnPasses",
 	CooldownTime = "CooldownTime",
 	PromptsDisabled = "PromptsDisabled",
 }
 
----------------
--- Variables --
----------------
-
 CooldownManager.backgroundCooldownThreads = {}
 
----------------
--- Functions --
----------------
-
-local function validateUIComponents(components)
+local function validateUIComponents(components: any): boolean
 	return typeof(components) == "table"
 		and components.RefreshButton
 		and components.TimerLabel
 		and components.DataLabel
 end
 
-function CooldownManager.activateRefreshCooldownTimer(targetPlayer, userInterface, isViewingOwnPasses)
+--[[
+	Activates the refresh cooldown timer for a player.
+]]
+function CooldownManager.activateRefreshCooldownTimer(targetPlayer: Player, userInterface: any, isViewingOwnPasses: boolean)
 	if not ValidationUtils.isValidPlayer(targetPlayer) or not validateUIComponents(userInterface) then
 		warn(`[{script.Name}] Invalid parameters for cooldown timer`)
 		return
@@ -118,7 +106,10 @@ function CooldownManager.activateRefreshCooldownTimer(targetPlayer, userInterfac
 	end)
 end
 
-function CooldownManager.handleRefreshButtonClick(currentViewer, userInterface, viewingData)
+--[[
+	Handles the refresh button click event.
+]]
+function CooldownManager.handleRefreshButtonClick(currentViewer: Player, userInterface: any, viewingData: any)
 	if not CooldownManager.playerCooldownRegistry or not CooldownManager.playerUIStates then
 		warn(`[{script.Name}] Registries not initialized`)
 		return
@@ -145,19 +136,15 @@ function CooldownManager.handleRefreshButtonClick(currentViewer, userInterface, 
 
 		currentViewer:SetAttribute(PLAYER_ATTRIBUTES_REFERENCE.PromptsDisabled, false)
 
-		-- Always notify and broadcast, regardless of UI state
 		notificationEvent:FireClient(currentViewer, "Your passes have been refreshed!", "Success")
 		StandManager.BroadcastStandRefresh(currentViewer)
 
-		-- Re-register cooldown in case cleanup cleared it during populateGamepassDisplayFrame
 		CooldownManager.playerCooldownRegistry[currentViewer.UserId] = true
 
-		-- Handle cooldown tracking based on UI availability
 		local currentState = CooldownManager.playerUIStates[currentViewer.UserId]
 		if currentState then
 			CooldownManager.activateRefreshCooldownTimer(currentViewer, userInterface, true)
 		else
-			-- UI was closed during refresh - run background cooldown tracking
 			local cooldownDuration = GameConfig.GAMEPASS_CONFIG.REFRESH_COOLDOWN
 			local viewerUserId = currentViewer.UserId
 			currentViewer:SetAttribute(PLAYER_ATTRIBUTES_REFERENCE.CooldownTime, cooldownDuration)
@@ -188,7 +175,11 @@ function CooldownManager.handleRefreshButtonClick(currentViewer, userInterface, 
 	end
 end
 
-function CooldownManager.initializeRefreshButtonBehavior(currentViewer, userInterface, viewingData)
+--[[
+	Initializes the refresh button behavior for a player.
+	Returns the button connection.
+]]
+function CooldownManager.initializeRefreshButtonBehavior(currentViewer: Player, userInterface: any, viewingData: any): RBXScriptConnection?
 	if not ValidationUtils.isValidPlayer(currentViewer) or not validateUIComponents(userInterface) then
 		warn(`[{script.Name}] Invalid parameters for refresh button`)
 		return nil
@@ -201,7 +192,10 @@ function CooldownManager.initializeRefreshButtonBehavior(currentViewer, userInte
 	return refreshConnection
 end
 
-function CooldownManager.cleanupBackgroundThread(player)
+--[[
+	Cleans up any background cooldown thread for a player.
+]]
+function CooldownManager.cleanupBackgroundThread(player: Player)
 	local userId = player.UserId
 	local thread = CooldownManager.backgroundCooldownThreads[userId]
 	if thread then
@@ -209,9 +203,5 @@ function CooldownManager.cleanupBackgroundThread(player)
 		CooldownManager.backgroundCooldownThreads[userId] = nil
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return CooldownManager

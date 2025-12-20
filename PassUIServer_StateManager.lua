@@ -1,35 +1,27 @@
------------------
--- Init Module --
------------------
+--[[
+	StateManager - Manages UI state per player.
+
+	Features:
+	- Player UI state creation and retrieval
+	- Connection and tween tracking
+	- Resource cleanup management
+]]
 
 local StateManager = {}
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
-
----------------
--- Variables --
----------------
 
 StateManager.playerUIStates = {}
 StateManager.playerCooldownRegistry = {}
 
----------------
--- Functions --
----------------
-
-function StateManager.getOrCreatePlayerUIState(player)
+--[[
+	Gets or creates UI state for a player.
+]]
+function StateManager.getOrCreatePlayerUIState(player: Player): any
 	local userId = player.UserId
 	if not StateManager.playerUIStates[userId] then
 		StateManager.playerUIStates[userId] = {
@@ -43,19 +35,29 @@ function StateManager.getOrCreatePlayerUIState(player)
 	return StateManager.playerUIStates[userId]
 end
 
-function StateManager.trackPlayerConnection(player, connection)
+--[[
+	Tracks a connection for a player's UI state.
+]]
+function StateManager.trackPlayerConnection(player: Player, connection: RBXScriptConnection): RBXScriptConnection
 	local state = StateManager.getOrCreatePlayerUIState(player)
 	state.connections:add(connection)
 	return connection
 end
 
-function StateManager.trackPlayerTween(player, tween)
+--[[
+	Tracks a tween for a player's UI state.
+]]
+function StateManager.trackPlayerTween(player: Player, tween: Tween): Tween
 	local state = StateManager.getOrCreatePlayerUIState(player)
 	table.insert(state.tweens, tween)
 	return tween
 end
 
-function StateManager.cleanupPlayerResources(player, preserveCooldownThread)
+--[[
+	Cleans up all resources for a player.
+	Optionally preserves the cooldown thread.
+]]
+function StateManager.cleanupPlayerResources(player: Player, preserveCooldownThread: boolean?)
 	local userId = player.UserId
 	local state = StateManager.playerUIStates[userId]
 	if not state then
@@ -86,8 +88,11 @@ function StateManager.cleanupPlayerResources(player, preserveCooldownThread)
 	end
 end
 
+--[[
+	Cleans up all player UI states.
+]]
 function StateManager.cleanupAllStates()
-	for userId in next, StateManager.playerUIStates do
+	for userId in pairs(StateManager.playerUIStates) do
 		local player = Players:GetPlayerByUserId(userId)
 		if player then
 			StateManager.cleanupPlayerResources(player, true)
@@ -98,16 +103,18 @@ function StateManager.cleanupAllStates()
 	table.clear(StateManager.playerUIStates)
 end
 
-function StateManager.isPlayerOnCooldown(player)
+--[[
+	Checks if a player is currently on cooldown.
+]]
+function StateManager.isPlayerOnCooldown(player: Player): boolean
 	return StateManager.playerCooldownRegistry[player.UserId] ~= nil
 end
 
-function StateManager.getPlayerUIState(player)
+--[[
+	Gets the UI state for a player if it exists.
+]]
+function StateManager.getPlayerUIState(player: Player): any?
 	return StateManager.playerUIStates[player.UserId]
 end
-
--------------------
--- Return Module --
--------------------
 
 return StateManager

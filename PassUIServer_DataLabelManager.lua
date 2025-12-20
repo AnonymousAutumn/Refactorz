@@ -1,21 +1,18 @@
------------------
--- Init Module --
------------------
+--[[
+	DataLabelManager - Manages data label display and animations.
+
+	Features:
+	- Player display name resolution
+	- Data label animation playback
+	- Label update for viewing/own modes
+]]
 
 local DataLabelManager = {}
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration
@@ -27,19 +24,15 @@ local GameConfig = require(configurationFolder.GameConfig)
 
 local uiSoundGroup = SoundService.UI
 
----------------
--- Constants --
----------------
-
 local ANIMATION_SETTINGS = {
 	DATA_LABEL_TWEEN = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 1, true),
 }
 
----------------
--- Functions --
----------------
-
-function DataLabelManager.resolvePlayerDisplayName(playerReference)
+--[[
+	Resolves the display name for a player reference.
+	Accepts either a Player instance or a UserId.
+]]
+function DataLabelManager.resolvePlayerDisplayName(playerReference: Player | number): string
 	if typeof(playerReference) == "Instance" and playerReference:IsA("Player") then
 		return playerReference.DisplayName or playerReference.Name or "Unknown"
 	end
@@ -52,7 +45,10 @@ function DataLabelManager.resolvePlayerDisplayName(playerReference)
 	return UsernameCache.getUsername(playerReference)
 end
 
-function DataLabelManager.playDataLabelAnimation(player, dataLabel, trackTween)
+--[[
+	Plays the data label animation with sound effect.
+]]
+function DataLabelManager.playDataLabelAnimation(player: Player, dataLabel: TextLabel, trackTween: (Player, Tween) -> ())
 	local coinJangleSound = uiSoundGroup.Jangle
 	if coinJangleSound and coinJangleSound:IsA("Sound") then
 		coinJangleSound:Play()
@@ -68,13 +64,19 @@ function DataLabelManager.playDataLabelAnimation(player, dataLabel, trackTween)
 	labelAnimationTween:Play()
 end
 
-function DataLabelManager.updateLabelForViewingMode(dataLabel, currentlyViewing)
+--[[
+	Updates the data label for viewing another player's items.
+]]
+function DataLabelManager.updateLabelForViewingMode(dataLabel: TextLabel, currentlyViewing: Player | number)
 	local targetDisplayName = DataLabelManager.resolvePlayerDisplayName(currentlyViewing)
 	dataLabel.RichText = false
 	dataLabel.Text = `{targetDisplayName}'s items`
 end
 
-function DataLabelManager.updateLabelForOwnMode(dataLabel, viewer)
+--[[
+	Updates the data label for viewing own items with raised amount.
+]]
+function DataLabelManager.updateLabelForOwnMode(dataLabel: TextLabel, viewer: Player): number
 	local leaderstats = PassUIUtilities.safeWaitForChild(viewer, "leaderstats", 3)
 	local raisedValue = 0
 
@@ -92,7 +94,10 @@ function DataLabelManager.updateLabelForOwnMode(dataLabel, viewer)
 	return raisedValue
 end
 
-function DataLabelManager.updateDataDisplayLabel(dataLabel, timerLabel, refreshButton, viewer, currentlyViewing, isInGiftingMode, shouldPlayAnimation, trackTween)
+--[[
+	Updates the data display label based on viewing context.
+]]
+function DataLabelManager.updateDataDisplayLabel(dataLabel: TextLabel, timerLabel: TextLabel, refreshButton: GuiButton, viewer: Player, currentlyViewing: Player?, isInGiftingMode: boolean, shouldPlayAnimation: boolean, trackTween: (Player, Tween) -> ())
 	if isInGiftingMode or currentlyViewing then
 		DataLabelManager.updateLabelForViewingMode(dataLabel, currentlyViewing)
 		timerLabel.Visible = false
@@ -105,9 +110,5 @@ function DataLabelManager.updateDataDisplayLabel(dataLabel, timerLabel, refreshB
 		end
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return DataLabelManager

@@ -1,6 +1,11 @@
------------------
--- Init Module --
------------------
+--[[
+	GiftInterface - Handles gift interface toggling.
+
+	Features:
+	- Gift interface visibility management
+	- Gift giver/recipient validation
+	- Rate-limited UI toggling
+]]
 
 local GiftInterface = {}
 GiftInterface.retrievePlayerDonationInterface = nil
@@ -8,16 +13,8 @@ GiftInterface.refreshDataDisplayLabel = nil
 GiftInterface.populateGamepassDisplayFrame = nil
 GiftInterface.getOrCreatePlayerUIState = nil
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -28,17 +25,9 @@ local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local EnhancedValidation = require(modulesFolder.Utilities.EnhancedValidation)
 local RateLimiter = require(modulesFolder.Utilities.RateLimiter)
 
----------------
--- Constants --
----------------
-
 local GIFTING_ATTRIBUTE_NAME = "Gifting"
 
----------------
--- Functions --
----------------
-
-local function unequipHeldTool(player)
+local function unequipHeldTool(player: Player)
 	local character = player.Character
 	if not character then
 		return
@@ -53,7 +42,11 @@ local function unequipHeldTool(player)
 	end
 end
 
-function GiftInterface.handleGiftInterfaceToggle(giftGiver, giftRecipient: Player | number)
+--[[
+	Handles toggling the gift interface for a player.
+	Validates both giver and recipient before showing UI.
+]]
+function GiftInterface.handleGiftInterfaceToggle(giftGiver: Player, giftRecipient: Player | number)
 
 	if not EnhancedValidation.validatePlayer(giftGiver) then
 		warn(`[{script.Name}] Invalid gift giver`)
@@ -115,9 +108,5 @@ function GiftInterface.handleGiftInterfaceToggle(giftGiver, giftRecipient: Playe
 		warn(`[{script.Name}] Error toggling gift interface for {giftGiver.Name}`)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return GiftInterface

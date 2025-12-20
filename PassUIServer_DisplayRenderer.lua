@@ -1,19 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	DisplayRenderer - Renders gamepass display with templates.
+
+	Features:
+	- Gamepass list truncation
+	- Empty state configuration
+	- Template-based gamepass rendering
+]]
 
 local DisplayRenderer = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration
@@ -26,18 +23,10 @@ local instancesFolder = ReplicatedStorage.Instances
 local guiPrefabs = instancesFolder.GuiPrefabs
 local passButtonPrefab = guiPrefabs.PassButtonPrefab
 
----------------
--- Constants --
----------------
-
 local MAX_GAMEPASS_DISPLAY = 100
 local VIEWING_ATTRIBUTE_NAME = "Viewing"
 
----------------
--- Functions --
----------------
-
-local function isValidGamepassData(data)
+local function isValidGamepassData(data: any): boolean
 	return typeof(data) == "table"
 		and typeof(data.Name) == "string"
 		and ValidationUtils.isValidUserId(data.Id)
@@ -45,7 +34,7 @@ local function isValidGamepassData(data)
 		and data.Price >= 0
 end
 
-local function buildGamepassDisplayTemplate(gamepassData)
+local function buildGamepassDisplayTemplate(gamepassData: any): Frame?
 	if not isValidGamepassData(gamepassData) then
 		warn(`[{script.Name}] Invalid gamepass data for template`)
 
@@ -71,10 +60,13 @@ local function buildGamepassDisplayTemplate(gamepassData)
 		return nil
 	end
 
-	return clonedTemplate 
+	return clonedTemplate
 end
 
-function DisplayRenderer.truncateGamepassList(gamepasses)
+--[[
+	Truncates the gamepass list if it exceeds the maximum display limit.
+]]
+function DisplayRenderer.truncateGamepassList(gamepasses: { any }): { any }
 	if #gamepasses <= MAX_GAMEPASS_DISPLAY then
 		return gamepasses
 	end
@@ -89,7 +81,10 @@ function DisplayRenderer.truncateGamepassList(gamepasses)
 	return truncated
 end
 
-function DisplayRenderer.configureEmptyStateVisibility(userInterface, availableGamepasses, isOwnerViewingOwnPasses)
+--[[
+	Configures visibility of empty state UI elements.
+]]
+function DisplayRenderer.configureEmptyStateVisibility(userInterface: any, availableGamepasses: { any }, isOwnerViewingOwnPasses: boolean)
 	local shouldDisplayEmptyState = isOwnerViewingOwnPasses and #availableGamepasses == 0
 	if userInterface.InfoLabel then
 		userInterface.InfoLabel.Visible = shouldDisplayEmptyState
@@ -99,7 +94,10 @@ function DisplayRenderer.configureEmptyStateVisibility(userInterface, availableG
 	end
 end
 
-function DisplayRenderer.configureEmptyStateMessages(userInterface, targetPlayerData, gamepassCount)
+--[[
+	Configures empty state messages based on player data.
+]]
+function DisplayRenderer.configureEmptyStateMessages(userInterface: any, targetPlayerData: any, gamepassCount: number)
 	if not userInterface.InfoLabel or not userInterface.LinkTextBox then
 		return
 	end
@@ -118,7 +116,10 @@ function DisplayRenderer.configureEmptyStateMessages(userInterface, targetPlayer
 	end
 end
 
-function DisplayRenderer.shouldShowLoadingLabel(userInterface, availableGamepasses, isViewingOwnPasses,viewingContext)
+--[[
+	Determines if the loading label should be shown.
+]]
+function DisplayRenderer.shouldShowLoadingLabel(userInterface: any, availableGamepasses: { any }, isViewingOwnPasses: boolean, viewingContext: any): boolean
 	if userInterface.InfoLabel and userInterface.LinkTextBox then
 		if userInterface.InfoLabel.Visible and userInterface.LinkTextBox.Visible then
 			return false
@@ -136,7 +137,10 @@ function DisplayRenderer.shouldShowLoadingLabel(userInterface, availableGamepass
 	return false
 end
 
-function DisplayRenderer.displayGamepasses(scrollFrame, gamepasses, currentViewer,targetUserId)
+--[[
+	Displays gamepasses in the scroll frame using templates.
+]]
+function DisplayRenderer.displayGamepasses(scrollFrame: ScrollingFrame, gamepasses: { any }, currentViewer: Player, targetUserId: number)
 	PassUIUtilities.resetGamepassScrollFrame(scrollFrame)
 
 	for i = 1, #gamepasses do
@@ -155,9 +159,5 @@ function DisplayRenderer.displayGamepasses(scrollFrame, gamepasses, currentViewe
 		end
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return DisplayRenderer

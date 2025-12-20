@@ -1,28 +1,21 @@
------------------
--- Init Module --
------------------
+--[[
+	RigBuilder - Creates character rigs for viewport display.
+
+	Features:
+	- Humanoid model creation from user ID
+	- Unwanted instance cleanup
+	- Retry logic with timeout
+]]
 
 local RigBuilder = {}
 RigBuilder.safeExecute = nil
 RigBuilder.positionCharacterAtRankLocation = nil
 
---------------
--- Services --
---------------
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local UNWANTED_INSTANCE_CLASSES = { "Sound", "LocalScript" }
 local CHARACTER_RIG_NAME_PREFIX = "ViewportRig_"
@@ -31,12 +24,8 @@ local MAX_CHARACTER_CREATION_RETRIES = 3
 local CHARACTER_CREATION_RETRY_DELAY = 1
 local CHARACTER_CREATION_TIMEOUT = 10
 
----------------
--- Functions --
----------------
-
-local function shouldRemoveInstance(instance)
-	for _, unwantedClassName in ipairs(UNWANTED_INSTANCE_CLASSES) do
+local function shouldRemoveInstance(instance: Instance): boolean
+	for _, unwantedClassName in pairs(UNWANTED_INSTANCE_CLASSES) do
 		if instance:IsA(unwantedClassName) then
 			return true
 		end
@@ -44,11 +33,11 @@ local function shouldRemoveInstance(instance)
 	return false
 end
 
-local function hasTimedOut(startTime, timeout)
+local function hasTimedOut(startTime: number, timeout: number): boolean
 	return os.clock() - startTime > timeout
 end
 
-local function createCharacterRig(playerUserId, startTime)
+local function createCharacterRig(playerUserId: number, startTime: number): Model
 	local rig = Players:CreateHumanoidModelFromUserId(playerUserId)
 
 	if hasTimedOut(startTime, CHARACTER_CREATION_TIMEOUT) then
@@ -58,7 +47,7 @@ local function createCharacterRig(playerUserId, startTime)
 	return rig
 end
 
-local function configureCharacterRig(createdCharacterRig, playerUserId, rankPositionReference, worldModel)
+local function configureCharacterRig(createdCharacterRig: Model, playerUserId: number, rankPositionReference: Model, worldModel: WorldModel)
 	createdCharacterRig.Name = CHARACTER_RIG_NAME_PREFIX .. tostring(playerUserId)
 
 	if RigBuilder.positionCharacterAtRankLocation then
@@ -69,7 +58,7 @@ local function configureCharacterRig(createdCharacterRig, playerUserId, rankPosi
 	createdCharacterRig.Parent = worldModel
 end
 
-local function attemptCharacterCreation(playerUserId, rankPositionReference, worldModel, isCancelled)
+local function attemptCharacterCreation(playerUserId: number, rankPositionReference: Model, worldModel: WorldModel, isCancelled: (() -> boolean)?): Model?
 	-- Check for cancellation before starting the attempt
 	if isCancelled and isCancelled() then
 		return nil
@@ -105,7 +94,10 @@ local function attemptCharacterCreation(playerUserId, rankPositionReference, wor
 	return createdCharacterRig
 end
 
-function RigBuilder.removeUnwantedInstancesFromModel(characterModel)
+--[[
+	Removes unwanted instances (sounds, scripts) from a character model.
+]]
+function RigBuilder.removeUnwantedInstancesFromModel(characterModel: Model?)
 	if not characterModel or not characterModel:IsA("Model") then
 		return
 	end
@@ -115,7 +107,7 @@ function RigBuilder.removeUnwantedInstancesFromModel(characterModel)
 	end
 
 	RigBuilder.safeExecute(function()
-		for _, modelDescendant in ipairs(characterModel:GetDescendants()) do
+		for _, modelDescendant in pairs(characterModel:GetDescendants()) do
 			if shouldRemoveInstance(modelDescendant) then
 				modelDescendant:Destroy()
 			end
@@ -123,7 +115,10 @@ function RigBuilder.removeUnwantedInstancesFromModel(characterModel)
 	end)
 end
 
-function RigBuilder.createPlayerCharacterForDisplay(playerUserId, rankPositionReference, worldModel, isCancelled)
+--[[
+	Creates a player character model for display in a viewport.
+]]
+function RigBuilder.createPlayerCharacterForDisplay(playerUserId: number, rankPositionReference: Model?, worldModel: WorldModel?, isCancelled: (() -> boolean)?): Model?
 	if not ValidationUtils.isValidUserId(playerUserId) or not rankPositionReference or not rankPositionReference:IsA("Model") then
 		return nil
 	end
@@ -157,14 +152,6 @@ function RigBuilder.createPlayerCharacterForDisplay(playerUserId, rankPositionRe
 	return nil
 end
 
---------------------
--- Initialization --
---------------------
-
 RigBuilder.CHARACTER_RIG_NAME_PREFIX = CHARACTER_RIG_NAME_PREFIX
-
--------------------
--- Return Module --
--------------------
 
 return RigBuilder

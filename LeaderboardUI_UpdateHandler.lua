@@ -1,20 +1,17 @@
------------------
--- Init Module --
------------------
+--[[
+	UpdateHandler - Handles leaderboard update events from server.
+
+	Features:
+	- Remote event connection setup
+	- Server ready notification
+	- Safe update processing
+]]
 
 local UpdateHandler = {}
 
----------------
--- Constants --
----------------
-
 local CLIENT_READY_MESSAGE = "Ready"
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func)
+local function safeExecute(func: () -> ()): boolean
 	local success, errorMessage = pcall(func)
 	if not success then
 		warn("Error in UpdateHandler.safeExecute:", errorMessage)
@@ -22,7 +19,7 @@ local function safeExecute(func)
 	return success
 end
 
-local function handleLeaderboardUpdate(serverLeaderboardData, clientHandler, updateStateFunc)
+local function handleLeaderboardUpdate(serverLeaderboardData: any, clientHandler: any, updateStateFunc: (any) -> ())
 	if typeof(serverLeaderboardData) ~= "table" then
 		return
 	end
@@ -32,7 +29,10 @@ local function handleLeaderboardUpdate(serverLeaderboardData, clientHandler, upd
 	end)
 end
 
-function UpdateHandler.setupUpdates(updateRemoteEvent, clientHandler, state, updateStateFunc)
+--[[
+	Sets up update event listener and notifies server of readiness.
+]]
+function UpdateHandler.setupUpdates(updateRemoteEvent: RemoteEvent?, clientHandler: any?, state: any?, updateStateFunc: (any) -> ()): boolean
 	if not updateRemoteEvent or not updateRemoteEvent:IsA("RemoteEvent") or not clientHandler or not state then
 		return false
 	end
@@ -47,9 +47,5 @@ function UpdateHandler.setupUpdates(updateRemoteEvent, clientHandler, state, upd
 		updateRemoteEvent:FireServer(CLIENT_READY_MESSAGE)
 	end)
 end
-
--------------------
--- Return Module --
--------------------
 
 return UpdateHandler

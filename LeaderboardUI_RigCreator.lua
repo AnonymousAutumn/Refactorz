@@ -1,20 +1,18 @@
------------------
--- Init Module --
------------------
+--[[
+	LeaderboardCharacterDisplayManager - Manages character display in leaderboard viewports.
+
+	Features:
+	- Character rig creation and cleanup
+	- Rank-based positioning
+	- Animation management
+	- Race condition prevention via version tracking
+]]
 
 local LeaderboardCharacterDisplayManager = {}
 LeaderboardCharacterDisplayManager.__index = LeaderboardCharacterDisplayManager
 
---------------
--- Services --
---------------
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
@@ -22,34 +20,26 @@ local RigBuilder = require(script.RigBuilder)
 local RigPositioner = require(script.RigPositioner)
 local AnimationController = require(script.AnimationController)
 
----------------
--- Constants --
----------------
-
 local LEADERBOARD_RANK_POSITIONS = { "Gold", "Silver", "Bronze" }
 local MAX_CHARACTERS_DISPLAYED = 3
 local COMPONENT_WAIT_TIMEOUT = 10
 
----------------
--- Functions --
----------------
-
-local function isValidRankIndex(rankIndex)
+local function isValidRankIndex(rankIndex: number): boolean
 	return typeof(rankIndex) == "number" and rankIndex >= 1 and rankIndex <= #LEADERBOARD_RANK_POSITIONS
 end
 
-local function safeExecute(func)
+local function safeExecute(func: () -> ()): boolean
 	return pcall(func)
 end
 
-local function waitForChildSafe(parent, childName, timeout)
+local function waitForChildSafe(parent: Instance, childName: string, timeout: number): Instance?
 	local success, child = pcall(function()
 		return parent:WaitForChild(childName, timeout)
 	end)
 	return success and child or nil
 end
 
-local function initializeComponents(leaderboardSurfaceGui)
+local function initializeComponents(leaderboardSurfaceGui: SurfaceGui): (ViewportFrame, WorldModel)
 	local mainFrame = waitForChildSafe(leaderboardSurfaceGui, "MainFrame", COMPONENT_WAIT_TIMEOUT)
 	if not mainFrame or not mainFrame:IsA("ViewportFrame") then
 		error("MainFrame not found")
@@ -63,7 +53,10 @@ local function initializeComponents(leaderboardSurfaceGui)
 	return mainFrame, worldModel
 end
 
-function LeaderboardCharacterDisplayManager.new(leaderboardSurfaceGui)
+--[[
+	Creates a new LeaderboardCharacterDisplayManager instance.
+]]
+function LeaderboardCharacterDisplayManager.new(leaderboardSurfaceGui: SurfaceGui?): any?
 	if not leaderboardSurfaceGui or not leaderboardSurfaceGui:IsA("SurfaceGui") then
 		return nil
 	end
@@ -82,7 +75,7 @@ function LeaderboardCharacterDisplayManager.new(leaderboardSurfaceGui)
 	return success and self or nil
 end
 
-local function cleanupCharacterRig(rigData)
+local function cleanupCharacterRig(rigData: any)
 	if rigData.animationTrack then
 		AnimationController.cleanupAnimationTrack(rigData.animationTrack)
 	end
@@ -92,13 +85,16 @@ local function cleanupCharacterRig(rigData)
 	end
 end
 
+--[[
+	Clears all displayed character rigs.
+]]
 function LeaderboardCharacterDisplayManager:clearAllDisplayedCharacters()
 	safeExecute(function()
-		for _, rigData in ipairs(self.DisplayedCharacterRigs) do
+		for _, rigData in pairs(self.DisplayedCharacterRigs) do
 			cleanupCharacterRig(rigData)
 		end
 
-		for _, child in ipairs(self.CharacterDisplayWorldModel:GetChildren()) do
+		for _, child in pairs(self.CharacterDisplayWorldModel:GetChildren()) do
 			if child.Name:match("^" .. RigBuilder.CHARACTER_RIG_NAME_PREFIX) then
 				child:Destroy()
 			end
@@ -118,7 +114,7 @@ local function createCancellationCheck(self, capturedVersion)
 	end
 end
 
-local function processSinglePlayerCharacter(self, playerUserId, rankIndex, isCancelled)
+local function processSinglePlayerCharacter(self: any, playerUserId: number, rankIndex: number, isCancelled: () -> boolean): any?
 	if not ValidationUtils.isValidUserId(playerUserId) or not isValidRankIndex(rankIndex) then
 		return nil
 	end
@@ -165,7 +161,10 @@ local function processSinglePlayerCharacter(self, playerUserId, rankIndex, isCan
 	return nil
 end
 
-function LeaderboardCharacterDisplayManager:processResults(topPlayerUserIds)
+--[[
+	Processes leaderboard results and displays top player characters.
+]]
+function LeaderboardCharacterDisplayManager:processResults(topPlayerUserIds: { number })
 	if typeof(topPlayerUserIds) ~= "table" then
 		return
 	end
@@ -204,8 +203,10 @@ function LeaderboardCharacterDisplayManager:processResults(topPlayerUserIds)
 	end)
 end
 
+--[[
+	Cleans up all resources and cancels pending updates.
+]]
 function LeaderboardCharacterDisplayManager:cleanup()
-	-- Increment version to cancel any in-progress updates
 	self.updateVersion = self.updateVersion + 1
 
 	self:clearAllDisplayedCharacters()
@@ -214,10 +215,6 @@ function LeaderboardCharacterDisplayManager:cleanup()
 	self.CharacterDisplayWorldModel = nil
 end
 
---------------------
--- Initialization --
---------------------
-
 RigBuilder.safeExecute = safeExecute
 RigBuilder.positionCharacterAtRankLocation = function(characterRig, rankPositionReference)
 	return RigPositioner.positionCharacterAtRankLocation(characterRig, rankPositionReference)
@@ -225,9 +222,5 @@ end
 
 RigPositioner.safeExecute = safeExecute
 AnimationController.safeExecute = safeExecute
-
--------------------
--- Return Module --
--------------------
 
 return LeaderboardCharacterDisplayManager

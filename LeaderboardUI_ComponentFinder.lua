@@ -1,43 +1,35 @@
------------------
--- Init Module --
------------------
+--[[
+	ComponentFinder - Finds leaderboard UI components in workspace.
+
+	Features:
+	- Workspace leaderboard component lookup
+	- Remote event discovery
+	- Safe child waiting with timeout
+]]
 
 local ComponentFinder = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local leaderboardRemoteEvents = networkFolder.Remotes.Leaderboards
 local workspaceLeaderboardsContainer = Workspace:WaitForChild("Leaderboards")
 
----------------
--- Constants --
----------------
-
 local COMPONENT_WAIT_TIMEOUT = 10
 local REMOTE_EVENT_NAME_FORMAT = "Update%s"
 
----------------
--- Functions --
----------------
-
-local function waitForChildSafe(parent, childName, timeout)
+local function waitForChildSafe(parent: Instance, childName: string, timeout: number): Instance?
 	local success, child = pcall(function()
 		return parent:WaitForChild(childName, timeout)
 	end)
 	return success and child or nil
 end
 
-function ComponentFinder.getWorkspaceComponents(leaderboardName)
+--[[
+	Gets workspace components for a leaderboard by name.
+]]
+function ComponentFinder.getWorkspaceComponents(leaderboardName: string): { scrollingFrame: ScrollingFrame, toggleButton: GuiButton }?
 	if typeof(leaderboardName) ~= "string" or leaderboardName == "" then
 		return nil
 	end
@@ -73,15 +65,14 @@ function ComponentFinder.getWorkspaceComponents(leaderboardName)
 	}
 end
 
-function ComponentFinder.getUpdateRemoteEvent(leaderboardName)
+--[[
+	Gets the update remote event for a leaderboard.
+]]
+function ComponentFinder.getUpdateRemoteEvent(leaderboardName: string): RemoteEvent?
 	local updateEventName = `Update{leaderboardName}`
 	local remoteEvent = leaderboardRemoteEvents:FindFirstChild(updateEventName)
-	
+
 	return remoteEvent
 end
-
--------------------
--- Return Module --
--------------------
 
 return ComponentFinder

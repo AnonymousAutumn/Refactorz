@@ -1,3 +1,7 @@
+--[[
+	randomColor - Generates a random Color3 value.
+]]
+
 local random = Random.new()
 
 local function randomColor(): Color3

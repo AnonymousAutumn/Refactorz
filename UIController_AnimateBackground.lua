@@ -1,3 +1,11 @@
+--[[
+	AnimBackground - Animated tiling background effect.
+
+	Features:
+	- Continuous diagonal scrolling
+	- Start/stop control
+]]
+
 local TweenService = game:GetService("TweenService")
 
 local AnimBackground = {}

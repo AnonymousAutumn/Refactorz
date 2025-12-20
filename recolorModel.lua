@@ -1,3 +1,7 @@
+--[[
+	recolorModel - Recolors tagged parts in a model.
+]]
+
 local RECOLOR_TAG = "Recolor"
 
 local function recolorModel(model: Model, color: Color3)

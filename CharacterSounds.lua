@@ -1,4 +1,11 @@
--- Roblox character sound script
+--[[
+	CharacterSounds - Roblox character sound system.
+
+	Features:
+	- State-based sound playback
+	- Looped sound management
+	- Velocity-based volume control
+]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")

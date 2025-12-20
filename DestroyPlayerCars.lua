@@ -1,4 +1,8 @@
-local function destroyPlayerCars(player)
+--[[
+	DestroyPlayerCars - Removes all cars owned by a player.
+]]
+
+local function destroyPlayerCars(player: Player)
 	local cars = workspace.Debris:GetChildren()
 
 	for _, car in cars do

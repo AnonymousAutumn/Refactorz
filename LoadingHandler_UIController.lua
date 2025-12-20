@@ -1,3 +1,12 @@
+--[[
+	UIController - Loading screen UI controller.
+
+	Features:
+	- Text animation
+	- Background animation
+	- Loading state management
+]]
+
 local TweenService = game:GetService("TweenService")
 
 local TextController = require(script.TextController)

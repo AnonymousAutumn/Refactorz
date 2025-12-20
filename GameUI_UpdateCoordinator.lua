@@ -1,28 +1,21 @@
------------------
--- Init Module --
------------------
+--[[
+	UpdateCoordinator - Coordinates game UI updates.
+
+	Features:
+	- Status display management
+	- Game ending pattern detection
+	- Auto-hide scheduling
+]]
 
 local UpdateCoordinator = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local GameStateManager = require(script.Parent.GameStateManager)
 local StatusAnimator = require(script.Parent.StatusAnimator)
 local TimeoutManager = require(script.Parent.TimeoutManager)
-
----------------
--- Constants --
----------------
 
 local STATUS_MESSAGE_DISPLAY_DURATION = 3
 local IGNORE_UPDATES_BUFFER = 0.1
@@ -34,15 +27,11 @@ local GAME_ENDING_PATTERNS = {
 	"draw",
 }
 
----------------
--- Functions --
----------------
-
-local function getCurrentTime()
+local function getCurrentTime(): number
 	return os.clock()
 end
 
-local function safeExecute(func, errorMessage)
+local function safeExecute(func: () -> (), errorMessage: string): boolean
 	local success, errorDetails = pcall(func)
 	if not success then
 		warn(errorMessage, errorDetails)
@@ -50,7 +39,10 @@ local function safeExecute(func, errorMessage)
 	return success
 end
 
-function UpdateCoordinator.validateTurnUpdateParams(statusText, timeoutSeconds)
+--[[
+	Validates turn update parameters.
+]]
+function UpdateCoordinator.validateTurnUpdateParams(statusText: string?, timeoutSeconds: number?): boolean
 	if not ValidationUtils.isValidString(statusText) then
 		return false
 	end
@@ -60,7 +52,10 @@ function UpdateCoordinator.validateTurnUpdateParams(statusText, timeoutSeconds)
 	return true
 end
 
-function UpdateCoordinator.displayStatusIfChanged(message)
+--[[
+	Displays status if changed from previous.
+]]
+function UpdateCoordinator.displayStatusIfChanged(message: string?)
 	if not ValidationUtils.isValidString(message) then
 		return
 	end
@@ -71,6 +66,9 @@ function UpdateCoordinator.displayStatusIfChanged(message)
 	end
 end
 
+--[[
+	Cancels the auto-hide task if active.
+]]
 function UpdateCoordinator.cancelAutoHideTask()
 	if not GameStateManager.state.autoHideTask then
 		return
@@ -101,12 +99,15 @@ function UpdateCoordinator.scheduleAutoHide()
 	GameStateManager.trackTask(GameStateManager.state.autoHideTask)
 end
 
-function UpdateCoordinator.isGameEndingMessage(message)
+--[[
+	Checks if the message indicates game ending.
+]]
+function UpdateCoordinator.isGameEndingMessage(message: string?): boolean
 	if not ValidationUtils.isValidString(message) then
 		return false
 	end
 
-	for _, pattern in GAME_ENDING_PATTERNS do
+	for _, pattern in pairs(GAME_ENDING_PATTERNS) do
 		if string.find(message, pattern) then
 			return true
 		end
@@ -138,7 +139,10 @@ function UpdateCoordinator.prepareForTurnUpdate(hideExitButton)
 	StatusAnimator.setExitButtonVisibility(not hideExitButton)
 end
 
-function UpdateCoordinator.handleGameUIUpdate(statusText, timeoutSeconds, hideExitButton)
+--[[
+	Handles game UI update events from server.
+]]
+function UpdateCoordinator.handleGameUIUpdate(statusText: string?, timeoutSeconds: number?, hideExitButton: boolean?)
 	if not UpdateCoordinator.validateTurnUpdateParams(statusText, timeoutSeconds) then
 		return
 	end
@@ -166,9 +170,5 @@ function UpdateCoordinator.handleGameUIUpdate(statusText, timeoutSeconds, hideEx
 		end
 	end, "Error handling game UI update")
 end
-
--------------------
--- Return Module --
--------------------
 
 return UpdateCoordinator

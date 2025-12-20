@@ -1,29 +1,25 @@
------------------
--- Init Module --
------------------
+--[[
+	DataFetcher - Fetches and processes leaderboard data.
+
+	Features:
+	- User ID extraction
+	- DataStore page retrieval
+	- Client update broadcasting
+]]
 
 local DataFetcher = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local RetryAsync = require(modulesFolder.Utilities.RetryAsync)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local Populater = require(script.Parent.Populater)
 
----------------
--- Functions --
----------------
-
-function DataFetcher.extractUserId(leaderboardEntry)
+--[[
+	Extracts user ID from a leaderboard entry.
+]]
+function DataFetcher.extractUserId(leaderboardEntry: any): number?
 	if not leaderboardEntry or not leaderboardEntry.key then
 		return nil
 	end
@@ -35,7 +31,10 @@ function DataFetcher.extractUserId(leaderboardEntry)
 	return nil
 end
 
-function DataFetcher.prepareTopPlayersData(processedLeaderboardEntries, maxCharacterDisplayCount)
+--[[
+	Prepares top players data for character display.
+]]
+function DataFetcher.prepareTopPlayersData(processedLeaderboardEntries: { any }, maxCharacterDisplayCount: number): { number }
 	local topPlayersForCharacterDisplay = {}
 	for entryIndex = 1, maxCharacterDisplayCount do
 		local leaderboardEntry = processedLeaderboardEntries[entryIndex]
@@ -47,7 +46,10 @@ function DataFetcher.prepareTopPlayersData(processedLeaderboardEntries, maxChara
 	return topPlayersForCharacterDisplay
 end
 
-function DataFetcher.validateLeaderboardDataPages(dataPages)
+--[[
+	Validates leaderboard data pages.
+]]
+function DataFetcher.validateLeaderboardDataPages(dataPages: any): boolean
 	if not dataPages then
 		return false
 	end
@@ -57,7 +59,10 @@ function DataFetcher.validateLeaderboardDataPages(dataPages)
 	return true
 end
 
-function DataFetcher.retrieveLeaderboardData(orderedDataStore, maximumEntriesToRetrieve, systemConfiguration)
+--[[
+	Retrieves leaderboard data from the ordered DataStore.
+]]
+function DataFetcher.retrieveLeaderboardData(orderedDataStore: OrderedDataStore, maximumEntriesToRetrieve: number, systemConfiguration: any): (boolean, any)
 	local dataRetrievalSuccess, retrievedDataResult = RetryAsync(
 		function()
 			return orderedDataStore:GetSortedAsync(false, maximumEntriesToRetrieve)
@@ -69,7 +74,10 @@ function DataFetcher.retrieveLeaderboardData(orderedDataStore, maximumEntriesToR
 	return dataRetrievalSuccess, retrievedDataResult
 end
 
-function DataFetcher.extractLeaderboardEntries(leaderboardDataPages, displayCount)
+--[[
+	Extracts leaderboard entries from data pages.
+]]
+function DataFetcher.extractLeaderboardEntries(leaderboardDataPages: any, displayCount: number): (boolean, { any }?)
 	local success, processedLeaderboardEntries = pcall(function()
 		return Populater.extractLeaderboardDataFromPages(leaderboardDataPages, displayCount)
 	end)
@@ -79,7 +87,10 @@ function DataFetcher.extractLeaderboardEntries(leaderboardDataPages, displayCoun
 	return success, processedLeaderboardEntries
 end
 
-function DataFetcher.sendTopPlayerDataToClients(clientUpdateEvent, topPlayersData, statisticName)
+--[[
+	Sends top player data to all clients.
+]]
+function DataFetcher.sendTopPlayerDataToClients(clientUpdateEvent: RemoteEvent, topPlayersData: { number }, statisticName: string)
 	local success, errorMessage = pcall(function()
 		clientUpdateEvent:FireAllClients(topPlayersData)
 	end)
@@ -87,9 +98,5 @@ function DataFetcher.sendTopPlayerDataToClients(clientUpdateEvent, topPlayersDat
 		warn(`[{script.Name}] Failed to fire client update for {statisticName}: {tostring(errorMessage)}`)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return DataFetcher

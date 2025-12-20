@@ -1,34 +1,36 @@
------------------
--- Init Module --
------------------
+--[[
+	DisplayManager - Manages leaderboard display frames.
+
+	Features:
+	- Display frame creation
+	- Frame update coordination
+	- UI validation
+]]
 
 local DisplayManager = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local Populater = require(script.Parent.Populater)
 
----------------
--- Functions --
----------------
-
-function DisplayManager.isValidDisplayCount(count)
+--[[
+	Validates that count is a positive number.
+]]
+function DisplayManager.isValidDisplayCount(count: number?): boolean
 	return type(count) == "number" and count > 0
 end
 
-function DisplayManager.isValidUIElement(element)
+--[[
+	Validates that UI element exists and has a parent.
+]]
+function DisplayManager.isValidUIElement(element: Instance?): boolean
 	return element ~= nil and element.Parent ~= nil
 end
 
-function DisplayManager.createSingleDisplayFrame(frameIndex, parentScrollingFrame, colorConfiguration, fadeInDuration, leaderboardPrefab)
+--[[
+	Creates a single leaderboard display frame.
+]]
+function DisplayManager.createSingleDisplayFrame(frameIndex: number, parentScrollingFrame: ScrollingFrame, colorConfiguration: any, fadeInDuration: number, leaderboardPrefab: Frame): Frame?
 	local success, frameOrError = pcall(function()
 		return Populater.createLeaderboardEntryFrame(
 			frameIndex,
@@ -47,7 +49,10 @@ function DisplayManager.createSingleDisplayFrame(frameIndex, parentScrollingFram
 	return nil
 end
 
-function DisplayManager.createLeaderboardDisplayFrames(parentScrollingFrame, totalDisplayCount, colorConfiguration, fadeInDuration, leaderboardPrefab)
+--[[
+	Creates all leaderboard display frames.
+]]
+function DisplayManager.createLeaderboardDisplayFrames(parentScrollingFrame: ScrollingFrame, totalDisplayCount: number, colorConfiguration: any, fadeInDuration: number, leaderboardPrefab: Frame): { Frame }
 	if not DisplayManager.isValidUIElement(parentScrollingFrame) then
 		return {}
 	end
@@ -72,7 +77,10 @@ function DisplayManager.createLeaderboardDisplayFrames(parentScrollingFrame, tot
 	return createdDisplayFrames
 end
 
-function DisplayManager.updateDisplayFrames(displayFrameCollection, processedLeaderboardEntries, systemConfiguration, statisticName)
+--[[
+	Updates display frames with new leaderboard data.
+]]
+function DisplayManager.updateDisplayFrames(displayFrameCollection: { Frame }, processedLeaderboardEntries: { any }, systemConfiguration: any, statisticName: string): boolean
 	local success, errorMessage = pcall(function()
 		Populater.refreshAllLeaderboardDisplayFrames(displayFrameCollection, processedLeaderboardEntries, systemConfiguration)
 	end)
@@ -82,9 +90,5 @@ function DisplayManager.updateDisplayFrames(displayFrameCollection, processedLea
 	end
 	return true
 end
-
--------------------
--- Return Module --
--------------------
 
 return DisplayManager

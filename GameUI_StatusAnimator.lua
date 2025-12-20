@@ -1,28 +1,21 @@
------------------
--- Init Module --
------------------
+--[[
+	StatusAnimator - Animates game status UI elements.
+
+	Features:
+	- Status text updates
+	- Show/hide animations
+	- Mobile/desktop positioning
+]]
 
 local StatusAnimator = {}
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local GameStateManager = require(script.Parent.GameStateManager)
-
----------------
--- Constants --
----------------
 
 local STATUS_ANIMATION_TWEEN_INFO = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local STATUS_VISIBLE_DESKTOP = UDim2.new(0.5, 0, 1, -80)
@@ -30,20 +23,12 @@ local STATUS_VISIBLE_MOBILE = UDim2.new(0.5, 0, 1, -20)
 local STATUS_HIDDEN = UDim2.new(0.5, 0, 1, 40)
 local EMPTY_TEXT_PLACEHOLDER = ""
 
----------------
--- Variables --
----------------
-
 StatusAnimator.statusLabel = nil
 StatusAnimator.statusHolder = nil
 StatusAnimator.exitButton = nil
 StatusAnimator.isMobileDevice = false
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func, errorMessage)
+local function safeExecute(func: () -> (), errorMessage: string): boolean
 	local success, errorDetails = pcall(func)
 	if not success then
 		warn(errorMessage, errorDetails)
@@ -51,7 +36,10 @@ local function safeExecute(func, errorMessage)
 	return success
 end
 
-function StatusAnimator.updateStatusText(newText)
+--[[
+	Updates the status label text.
+]]
+function StatusAnimator.updateStatusText(newText: string?)
 	safeExecute(function()
 		local displayText = newText or EMPTY_TEXT_PLACEHOLDER
 		if not ValidationUtils.isValidString(displayText) then
@@ -64,7 +52,10 @@ function StatusAnimator.updateStatusText(newText)
 	end, "Error updating status text")
 end
 
-function StatusAnimator.setExitButtonVisibility(isVisible)
+--[[
+	Sets the exit button visibility.
+]]
+function StatusAnimator.setExitButtonVisibility(isVisible: boolean)
 	safeExecute(function()
 		if StatusAnimator.exitButton then
 			StatusAnimator.exitButton.Visible = isVisible
@@ -72,11 +63,17 @@ function StatusAnimator.setExitButtonVisibility(isVisible)
 	end, "Error setting exit button visibility")
 end
 
-function StatusAnimator.getVisiblePosition()
+--[[
+	Returns the visible position based on device type.
+]]
+function StatusAnimator.getVisiblePosition(): UDim2
 	return StatusAnimator.isMobileDevice and STATUS_VISIBLE_MOBILE or STATUS_VISIBLE_DESKTOP
 end
 
-function StatusAnimator.toggleCoreGui(enabled)
+--[[
+	Toggles core GUI visibility for mobile devices.
+]]
+function StatusAnimator.toggleCoreGui(enabled: boolean)
 	if not StatusAnimator.isMobileDevice then
 		return
 	end
@@ -86,12 +83,18 @@ function StatusAnimator.toggleCoreGui(enabled)
 	end, "Error toggling core GUI")
 end
 
-function StatusAnimator.createAndPlayTween(target, properties)
+--[[
+	Creates and plays a tween on the target.
+]]
+function StatusAnimator.createAndPlayTween(target: Instance, properties: { [string]: any })
 	local tween = TweenService:Create(target, STATUS_ANIMATION_TWEEN_INFO, properties)
 	GameStateManager.trackTween(tween)
 	tween:Play()
 end
 
+--[[
+	Shows the status interface with animation.
+]]
 function StatusAnimator.showStatusInterface()
 	if GameStateManager.state.isStatusVisible then
 		return
@@ -110,6 +113,9 @@ function StatusAnimator.showStatusInterface()
 	end, "Error showing status interface")
 end
 
+--[[
+	Hides the status interface with animation.
+]]
 function StatusAnimator.hideStatusInterface()
 	if not GameStateManager.state.isStatusVisible then
 		return
@@ -129,16 +135,18 @@ function StatusAnimator.hideStatusInterface()
 	end, "Error hiding status interface")
 end
 
-function StatusAnimator.isStatusVisible()
+--[[
+	Returns whether the status is currently visible.
+]]
+function StatusAnimator.isStatusVisible(): boolean
 	return GameStateManager.state.isStatusVisible
 end
 
-function StatusAnimator.getPreviousStatusText()
+--[[
+	Returns the previous status text.
+]]
+function StatusAnimator.getPreviousStatusText(): string
 	return GameStateManager.state.previousStatusText
 end
-
--------------------
--- Return Module --
--------------------
 
 return StatusAnimator

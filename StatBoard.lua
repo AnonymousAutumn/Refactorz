@@ -1,13 +1,15 @@
---------------
--- Services --
---------------
+--[[
+	StatBoard - Server-side leaderboard management system.
+
+	Features:
+	- Multiple leaderboard tracking
+	- DataStore data fetching
+	- Display frame management
+	- Client update broadcasting
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local leaderboardRemoteEvents = networkFolder.Remotes.Leaderboards
@@ -28,10 +30,6 @@ local leaderboardEntryPrefab = guiPrefabs.LeaderboardEntryPrefab
 
 local leaderboardsContainer = workspace.Leaderboards
 UIElementFinder.leaderboardsContainer = leaderboardsContainer
-
----------------
--- Constants --
----------------
 
 local TRACKED_LEADERBOARD_CONFIGURATIONS = {
 	{
@@ -58,10 +56,6 @@ local LEADERBOARD_ENTRY_FADE_IN_DURATION = 0.5
 local DATASTORE_MAXIMUM_PAGE_SIZE = 100
 local UPDATE_STAGGER_DELAY = 2
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 
 local activeLeaderboards = {}
@@ -69,11 +63,7 @@ local activeThreads = {}
 
 local isShuttingDown = false
 
----------------
--- Functions --
----------------
-
-local function trackThread(thr)
+local function trackThread(thr: thread): thread
 	activeThreads[#activeThreads + 1] = thr
 	return thr
 end
@@ -93,7 +83,7 @@ local function cleanupAllResources()
 	cancelAllThreads()
 end
 
-local function createSystemConfiguration(leaderboardConfig)
+local function createSystemConfiguration(leaderboardConfig: any): any
 	return {
 		AVATAR_HEADSHOT_URL = GameConfig.AVATAR_HEADSHOT_URL,
 		ROBUX_ICON_UTF = GameConfig.ROBUX_ICON_UTF,
@@ -103,7 +93,7 @@ local function createSystemConfiguration(leaderboardConfig)
 	}
 end
 
-local function refreshLeaderboardDataAsync(leaderboardState)
+local function refreshLeaderboardDataAsync(leaderboardState: any): boolean
 	if isShuttingDown then
 		return false
 	end
@@ -171,7 +161,7 @@ local function refreshLeaderboardDataAsync(leaderboardState)
 	return true
 end
 
-local function connectClientReadyEvent(leaderboardState)
+local function connectClientReadyEvent(leaderboardState: any)
 
 	local connection = leaderboardState.config.clientUpdateEvent.OnServerEvent:Connect(function(
 		requestingPlayer,
@@ -188,7 +178,7 @@ local function connectClientReadyEvent(leaderboardState)
 	connectionsMaid:add(connection)
 end
 
-local function initializeLeaderboard(leaderboardConfig, index)
+local function initializeLeaderboard(leaderboardConfig: any, index: number): any?
 	local success, orderedDataStore = pcall(function()
 		return DataStoreService:GetOrderedDataStore(leaderboardConfig.dataStoreKey)
 	end)
@@ -269,9 +259,5 @@ local function initialize()
 
 	game:BindToClose(cleanup)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

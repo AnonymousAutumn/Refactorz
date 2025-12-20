@@ -1,43 +1,41 @@
------------------
--- Init Module --
------------------
+--[[
+	EnhancedValidation - Advanced validation with constraints, bounds, and custom validators.
+
+	Extends ValidationUtils with:
+	- Configurable number/string bounds
+	- Custom validator callbacks
+	- Remote argument batch validation
+	- Physics-based action validation
+]]
 
 local EnhancedValidation = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local DEFAULT_STRING_MAX_LENGTH = 1000
 local DEFAULT_NUMBER_MIN = -1e9
 local DEFAULT_NUMBER_MAX = 1e9
 
----------------
--- Functions --
----------------
+export type ValidationConstraints = {
+	min: number?,
+	max: number?,
+	minLength: number?,
+	maxLength: number?,
+	allowNil: boolean?,
+	customValidator: ((any) -> boolean)?,
+}
 
-local function validateArgumentType(value, expectedType, allowNil)
+local function validateArgumentType(value: any, expectedType: string, allowNil: boolean?): boolean
 	if allowNil and value == nil then
 		return true
 	end
-
 	return typeof(value) == expectedType
 end
 
-local function validateNumberBounds(value, constraints)
+local function validateNumberBounds(value: number, constraints: ValidationConstraints?): boolean
 	if not ValidationUtils.isValidNumber(value) then
 		return false
 	end
@@ -48,7 +46,7 @@ local function validateNumberBounds(value, constraints)
 	return value >= min and value <= max
 end
 
-local function validateStringLength(value, constraints)
+local function validateStringLength(value: string, constraints: ValidationConstraints?): boolean
 	local length = #value
 	local minLength = if constraints and constraints.minLength then constraints.minLength else 0
 	local maxLength = if constraints and constraints.maxLength then constraints.maxLength else DEFAULT_STRING_MAX_LENGTH
@@ -56,15 +54,14 @@ local function validateStringLength(value, constraints)
 	return length >= minLength and length <= maxLength
 end
 
-local function validateNumberSanity(value)
+local function validateNumberSanity(value: any): boolean
 	if typeof(value) ~= "number" then
 		return true
 	end
-
 	return ValidationUtils.isValidNumber(value)
 end
 
-local function validateSingleArgument(value, expectedType, constraints)
+local function validateSingleArgument(value: any, expectedType: string, constraints: ValidationConstraints?): boolean
 	local allowNil = constraints and constraints.allowNil or false
 
 	if not validateArgumentType(value, expectedType, allowNil) then
@@ -76,16 +73,13 @@ local function validateSingleArgument(value, expectedType, constraints)
 	end
 
 	if expectedType == "number" then
-
 		if not validateNumberSanity(value) then
 			return false
 		end
-
 		if not validateNumberBounds(value, constraints) then
 			return false
 		end
 	elseif expectedType == "string" then
-
 		if not validateStringLength(value, constraints) then
 			return false
 		end
@@ -100,7 +94,11 @@ local function validateSingleArgument(value, expectedType, constraints)
 	return true
 end
 
-function EnhancedValidation.validateRemoteArgs(player, validations)
+--[[
+	Validates multiple arguments from a RemoteEvent call.
+	Each validation is a tuple: {value, expectedType, constraints?}
+]]
+function EnhancedValidation.validateRemoteArgs(player: Player, validations: {{any}}): boolean
 	if not ValidationUtils.isValidPlayer(player) then
 		warn("[EnhancedValidation] Invalid player in RemoteEvent")
 		return false
@@ -120,34 +118,42 @@ function EnhancedValidation.validateRemoteArgs(player, validations)
 	return true
 end
 
-function EnhancedValidation.validatePlayer(player)
+--[[
+	Validates a player instance is valid and in-game.
+]]
+function EnhancedValidation.validatePlayer(player: any): boolean
 	return ValidationUtils.isValidPlayer(player)
 end
 
-function EnhancedValidation.validateNumber(value, min, max)
+--[[
+	Validates a number is within optional min/max bounds.
+]]
+function EnhancedValidation.validateNumber(value: any, min: number?, max: number?): boolean
 	return validateSingleArgument(value, "number", {
 		min = min,
 		max = max,
 	})
 end
 
-function EnhancedValidation.validateString(value, minLength, maxLength)
+--[[
+	Validates a string is within optional length bounds.
+]]
+function EnhancedValidation.validateString(value: any, minLength: number?, maxLength: number?): boolean
 	return validateSingleArgument(value, "string", {
 		minLength = minLength,
 		maxLength = maxLength,
 	})
 end
 
-function EnhancedValidation.validatePositiveInteger(value, max)
+--[[
+	Validates a positive integer with optional maximum.
+]]
+function EnhancedValidation.validatePositiveInteger(value: any, max: number?): boolean
 	if not ValidationUtils.isValidNumber(value) then
 		return false
 	end
 
-	if value < 1 then
-		return false
-	end
-
-	if value ~= math.floor(value) then
+	if value < 1 or value ~= math.floor(value) then
 		return false
 	end
 
@@ -158,15 +164,25 @@ function EnhancedValidation.validatePositiveInteger(value, max)
 	return true
 end
 
-function EnhancedValidation.validateUserId(userId)
+--[[
+	Validates a Roblox user ID.
+]]
+function EnhancedValidation.validateUserId(userId: any): boolean
 	return ValidationUtils.isValidUserId(userId)
 end
 
-function EnhancedValidation.validateRequiredFields(data, requiredFields)
+--[[
+	Validates a table has all required fields.
+]]
+function EnhancedValidation.validateRequiredFields(data: any, requiredFields: {string}): boolean
 	return ValidationUtils.hasRequiredFields(data, requiredFields)
 end
 
-function EnhancedValidation.isActionPhysicallyPossible(player, targetPosition, maxDistance)
+--[[
+	Validates an action is physically possible based on player distance to target.
+	Returns true if no target position is provided.
+]]
+function EnhancedValidation.isActionPhysicallyPossible(player: Player, targetPosition: Vector3?, maxDistance: number?): boolean
 	if not ValidationUtils.isValidPlayer(player) then
 		return false
 	end
@@ -191,7 +207,10 @@ function EnhancedValidation.isActionPhysicallyPossible(player, targetPosition, m
 	return distance <= max
 end
 
-function EnhancedValidation.validateNumberArray(array)
+--[[
+	Validates all elements in an array are valid numbers.
+]]
+function EnhancedValidation.validateNumberArray(array: any): boolean
 	if typeof(array) ~= "table" then
 		return false
 	end
@@ -205,7 +224,10 @@ function EnhancedValidation.validateNumberArray(array)
 	return true
 end
 
-function EnhancedValidation.validateVector3(vector)
+--[[
+	Validates a Vector3 has finite components.
+]]
+function EnhancedValidation.validateVector3(vector: any): boolean
 	if typeof(vector) ~= "Vector3" then
 		return false
 	end
@@ -215,7 +237,10 @@ function EnhancedValidation.validateVector3(vector)
 		and ValidationUtils.isValidNumber(vector.Z)
 end
 
-function EnhancedValidation.validateCFrame(cframe)
+--[[
+	Validates a CFrame has finite position components.
+]]
+function EnhancedValidation.validateCFrame(cframe: any): boolean
 	if typeof(cframe) ~= "CFrame" then
 		return false
 	end
@@ -225,9 +250,5 @@ function EnhancedValidation.validateCFrame(cframe)
 		and ValidationUtils.isValidNumber(position.Y)
 		and ValidationUtils.isValidNumber(position.Z)
 end
-
--------------------
--- Return Module --
--------------------
 
 return EnhancedValidation

@@ -1,8 +1,12 @@
------------------
--- Module Init --
------------------
+--[[
+	NotificationHelper - Utility for sending typed notifications via events.
+
+	Provides type-safe notification sending with error handling.
+]]
 
 local NotificationHelper = {}
+
+-- Notification type constants
 NotificationHelper.Types = {
 	SUCCESS = "Success",
 	WARNING = "Warning",
@@ -10,11 +14,13 @@ NotificationHelper.Types = {
 	INFO = "Info",
 }
 
----------------
--- Functions --
----------------
+export type NotificationType = "Success" | "Warning" | "Error" | "Info"
 
-function NotificationHelper.send(event, message, notificationType)
+--[[
+	Sends a notification through the provided event.
+	Returns true on success, false on failure.
+]]
+function NotificationHelper.send(event: BindableEvent, message: string, notificationType: NotificationType?): boolean
 	local success, errorMessage = pcall(function()
 		event:Fire(message, notificationType or NotificationHelper.Types.INFO)
 	end)
@@ -27,24 +33,32 @@ function NotificationHelper.send(event, message, notificationType)
 	return true
 end
 
-function NotificationHelper.sendSuccess(event, message)
+--[[
+	Sends a success notification.
+]]
+function NotificationHelper.sendSuccess(event: BindableEvent, message: string): boolean
 	return NotificationHelper.send(event, message, NotificationHelper.Types.SUCCESS)
 end
 
-function NotificationHelper.sendWarning(event, message)
+--[[
+	Sends a warning notification.
+]]
+function NotificationHelper.sendWarning(event: BindableEvent, message: string): boolean
 	return NotificationHelper.send(event, message, NotificationHelper.Types.WARNING)
 end
 
-function NotificationHelper.sendError(event, message)
+--[[
+	Sends an error notification.
+]]
+function NotificationHelper.sendError(event: BindableEvent, message: string): boolean
 	return NotificationHelper.send(event, message, NotificationHelper.Types.ERROR)
 end
 
-function NotificationHelper.sendInfo(event, message)
+--[[
+	Sends an info notification.
+]]
+function NotificationHelper.sendInfo(event: BindableEvent, message: string): boolean
 	return NotificationHelper.send(event, message, NotificationHelper.Types.INFO)
 end
-
--------------------
--- Return Module --
--------------------
 
 return NotificationHelper

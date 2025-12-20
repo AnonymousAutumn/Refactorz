@@ -1,38 +1,37 @@
------------------
--- Init Module --
------------------
+--[[
+	UsernameCache - Caches player usernames with API fallback and retry logic.
+
+	Features:
+	- TTL-based caching (1 hour expiration)
+	- Automatic retry with linear backoff
+	- Statistics tracking (hits, misses, API calls)
+	- Timeout protection for API calls
+]]
 
 local UsernameCache = {}
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
-local validationUtils = require(modulesFolder.Utilities.ValidationUtils)
+local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local CacheManager = require(modulesFolder.Wrappers.Cache)
 
----------------
--- Constants --
----------------
-
 local DEFAULT_USERNAME = "Unknown"
-local USERNAME_CACHE_EXPIRATION = 60 * 60
-local USERNAME_CACHE_CLEANUP_INTERVAL = 60 * 10
+local USERNAME_CACHE_EXPIRATION = 60 * 60 -- 1 hour
+local USERNAME_CACHE_CLEANUP_INTERVAL = 60 * 10 -- 10 minutes
 local MAX_USERNAME_RETRIES = 2
 local USERNAME_FETCH_TIMEOUT = 5
 local BASE_RETRY_DELAY = 1
 
----------------
--- Variables --
----------------
+export type UsernameCacheStatistics = {
+	hits: number,
+	misses: number,
+	evictions: number,
+	size: number,
+	apiCalls: number,
+	failures: number,
+}
 
 local usernameCacheMaid = CacheManager.new(
 	USERNAME_CACHE_EXPIRATION,
@@ -43,19 +42,15 @@ local usernameCacheMaid = CacheManager.new(
 local apiCalls = 0
 local apiFailures = 0
 
----------------
--- Functions --
----------------
-
-local function calculateRetryDelay(attemptNumber)
+local function calculateRetryDelay(attemptNumber: number): number
 	return BASE_RETRY_DELAY * attemptNumber
 end
 
-local function hasExceededTimeout(startTime, timeoutSeconds)
+local function hasExceededTimeout(startTime: number, timeoutSeconds: number): boolean
 	return os.clock() - startTime > timeoutSeconds
 end
 
-local function fetchUsernameFromAPI(targetUserId)
+local function fetchUsernameFromAPI(targetUserId: number): (boolean, string?)
 	for attemptNumber = 1, MAX_USERNAME_RETRIES do
 		apiCalls += 1
 		local requestStartTime = os.clock()
@@ -81,9 +76,12 @@ local function fetchUsernameFromAPI(targetUserId)
 	return false, nil
 end
 
-function UsernameCache.getUsername(targetUserId)
-
-	if not validationUtils.isValidUserId(targetUserId) then
+--[[
+	Returns the username for a user ID, using cache or API.
+	Returns "Unknown" if the username cannot be fetched.
+]]
+function UsernameCache.getUsername(targetUserId: number): string
+	if not ValidationUtils.isValidUserId(targetUserId) then
 		warn(`[{script.Name}] Invalid user ID provided: {tostring(targetUserId)}`)
 		return DEFAULT_USERNAME
 	end
@@ -96,19 +94,24 @@ function UsernameCache.getUsername(targetUserId)
 	local success, username = fetchUsernameFromAPI(targetUserId)
 	if success and username then
 		usernameCacheMaid:set(targetUserId, username)
-		
 		return username
 	end
 
 	return DEFAULT_USERNAME
 end
 
-function UsernameCache.getUsernameAsync(targetUserId)
+--[[
+	Alias for getUsername (kept for backwards compatibility).
+]]
+function UsernameCache.getUsernameAsync(targetUserId: number): string
 	return UsernameCache.getUsername(targetUserId)
 end
 
-function UsernameCache.setCachedUsername(userId, username)
-	if not validationUtils.isValidUserId(userId) or not validationUtils.isValidString(username) then
+--[[
+	Manually sets a cached username (useful for pre-caching online players).
+]]
+function UsernameCache.setCachedUsername(userId: number, username: string)
+	if not ValidationUtils.isValidUserId(userId) or not ValidationUtils.isValidString(username) then
 		warn(`[{script.Name}] Invalid userId or username provided to setCachedUsername`)
 		return
 	end
@@ -116,19 +119,32 @@ function UsernameCache.setCachedUsername(userId, username)
 	usernameCacheMaid:set(userId, username)
 end
 
-function UsernameCache.invalidateCache(userId)
+--[[
+	Removes a specific user ID from the cache.
+]]
+function UsernameCache.invalidateCache(userId: number)
 	usernameCacheMaid:invalidate(userId)
 end
 
+--[[
+	Clears all cached usernames.
+]]
 function UsernameCache.clearCache()
 	usernameCacheMaid:clear()
 end
 
-function UsernameCache.cleanup()
+--[[
+	Manually triggers cache cleanup of expired entries.
+	Returns the number of entries removed.
+]]
+function UsernameCache.cleanup(): number
 	return usernameCacheMaid:cleanup()
 end
 
-function UsernameCache.getStatistics()
+--[[
+	Returns cache and API statistics.
+]]
+function UsernameCache.getStatistics(): UsernameCacheStatistics
 	local baseStats = usernameCacheMaid:getStatistics()
 
 	return {
@@ -141,22 +157,27 @@ function UsernameCache.getStatistics()
 	}
 end
 
+--[[
+	Resets all statistics counters.
+]]
 function UsernameCache.resetStatistics()
 	usernameCacheMaid:resetStatistics()
 	apiCalls = 0
 	apiFailures = 0
 end
 
-function UsernameCache.configure(settings)
+--[[
+	Configuration placeholder (not yet implemented).
+]]
+function UsernameCache.configure(_settings: any)
 	warn(`[{script.Name}] Note: configure() is not yet implemented. Using defaults.`)
 end
 
+--[[
+	Stops the automatic cleanup thread.
+]]
 function UsernameCache.shutdown()
 	usernameCacheMaid:stopAutoCleanup()
 end
-
--------------------
--- Return Module --
--------------------
 
 return UsernameCache

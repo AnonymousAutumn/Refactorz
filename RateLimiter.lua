@@ -1,56 +1,46 @@
------------------
--- Init Module --
------------------
+--[[
+	RateLimiter - Per-player, per-action rate limiting with violation tracking.
+
+	Features:
+	- Configurable cooldowns per action
+	- Automatic cleanup of stale entries
+	- Violation counting with threshold warnings
+	- Global cooldown configuration
+]]
 
 local RateLimiter = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 
----------------
--- Constants --
----------------
-
 local DEFAULT_COOLDOWN_SECONDS = 1
-local CLEANUP_INTERVAL_SECONDS = 300
-local ENTRY_EXPIRY_SECONDS = 600
+local CLEANUP_INTERVAL_SECONDS = 300 -- 5 minutes
+local ENTRY_EXPIRY_SECONDS = 600 -- 10 minutes
 local VIOLATION_THRESHOLD = 10
 local SUSPICIOUS_THRESHOLD = 50
 
----------------
--- Variables --
----------------
+export type RateLimitEntry = {
+	lastCallTime: number,
+	violationCount: number,
+}
 
 local connectionsMaid = Connections.new()
+local rateLimitData: { [number]: { [string]: RateLimitEntry } } = {}
+local globalCooldowns: { [string]: number } = {}
+local cleanupThread: thread? = nil
 
-local rateLimitData = {}
-local globalCooldowns = {}
-local cleanupThread = nil
-
----------------
--- Functions --
----------------
-
-local function getOrCreatePlayerData(userId)
+local function getOrCreatePlayerData(userId: number): { [string]: RateLimitEntry }
 	if not rateLimitData[userId] then
 		rateLimitData[userId] = {}
 	end
 	return rateLimitData[userId]
 end
 
-local function getOrCreateEntry(playerData, actionName)
+local function getOrCreateEntry(playerData: { [string]: RateLimitEntry }, actionName: string): RateLimitEntry
 	if not playerData[actionName] then
 		playerData[actionName] = {
 			lastCallTime = 0,
@@ -60,25 +50,23 @@ local function getOrCreateEntry(playerData, actionName)
 	return playerData[actionName]
 end
 
-local function getCooldownDuration(actionName)
+local function getCooldownDuration(actionName: string): number
 	return globalCooldowns[actionName] or DEFAULT_COOLDOWN_SECONDS
 end
 
-local function isEntryExpired(entry, currentTime)
+local function isEntryExpired(entry: RateLimitEntry, currentTime: number): boolean
 	return (currentTime - entry.lastCallTime) > ENTRY_EXPIRY_SECONDS
 end
 
-local function cleanupPlayerData(userId, currentTime)
+local function cleanupPlayerData(userId: number, currentTime: number)
 	local playerData = rateLimitData[userId]
 	if not playerData then
 		return
 	end
 
-	local entriesRemoved = 0
 	for actionName, entry in playerData do
 		if isEntryExpired(entry, currentTime) then
 			playerData[actionName] = nil
-			entriesRemoved += 1
 		end
 	end
 
@@ -89,14 +77,10 @@ end
 
 local function performCleanup()
 	local currentTime = tick()
-	local playersProcessed = 0
-	local entriesRemoved = 0
 
 	for userId in rateLimitData do
 		cleanupPlayerData(userId, currentTime)
-		playersProcessed += 1
 	end
-
 end
 
 local function startCleanupLoop()
@@ -119,14 +103,16 @@ local function stopCleanupLoop()
 	end
 end
 
-local function onPlayerRemoving(player)
-	local userId = player.UserId
-	if rateLimitData[userId] then
-		rateLimitData[userId] = nil
-	end
+local function onPlayerRemoving(player: Player)
+	rateLimitData[player.UserId] = nil
 end
 
-function RateLimiter.checkRateLimit(player, actionName, cooldownSeconds)
+--[[
+	Checks if an action is allowed for a player based on cooldown.
+	Returns true if allowed, false if rate limited.
+	Tracks violations and warns at thresholds.
+]]
+function RateLimiter.checkRateLimit(player: Player, actionName: string, cooldownSeconds: number?): boolean
 	if not ValidationUtils.isValidPlayer(player) then
 		warn(`[{script.Name}] Invalid player for rate limit check`)
 		return false
@@ -147,7 +133,6 @@ function RateLimiter.checkRateLimit(player, actionName, cooldownSeconds)
 	local timeSinceLastCall = currentTime - entry.lastCallTime
 
 	if timeSinceLastCall < cooldown then
-
 		entry.violationCount += 1
 
 		if entry.violationCount == VIOLATION_THRESHOLD then
@@ -160,15 +145,15 @@ function RateLimiter.checkRateLimit(player, actionName, cooldownSeconds)
 	end
 
 	entry.lastCallTime = currentTime
-
-	if entry.violationCount > 0 then
-		entry.violationCount = 0
-	end
+	entry.violationCount = 0
 
 	return true
 end
 
-function RateLimiter.setGlobalCooldown(actionName, cooldownSeconds)
+--[[
+	Sets a global cooldown duration for an action.
+]]
+function RateLimiter.setGlobalCooldown(actionName: string, cooldownSeconds: number)
 	if not ValidationUtils.isValidString(actionName) then
 		warn(`[{script.Name}] Invalid action name for global cooldown`)
 		return
@@ -182,11 +167,17 @@ function RateLimiter.setGlobalCooldown(actionName, cooldownSeconds)
 	globalCooldowns[actionName] = cooldownSeconds
 end
 
-function RateLimiter.getCooldown(actionName)
+--[[
+	Returns the cooldown duration for an action.
+]]
+function RateLimiter.getCooldown(actionName: string): number
 	return getCooldownDuration(actionName)
 end
 
-function RateLimiter.resetPlayerRateLimit(player, actionName)
+--[[
+	Resets a specific action's rate limit for a player.
+]]
+function RateLimiter.resetPlayerRateLimit(player: Player, actionName: string)
 	if not ValidationUtils.isValidPlayer(player) then
 		warn(`[{script.Name}] Invalid player for rate limit reset`)
 		return
@@ -195,19 +186,22 @@ function RateLimiter.resetPlayerRateLimit(player, actionName)
 	local userId = player.UserId
 	local playerData = rateLimitData[userId]
 
-	if playerData and playerData[actionName] then
+	if playerData then
 		playerData[actionName] = nil
 	end
 end
 
-function RateLimiter.getPlayerViolations(player)
+--[[
+	Returns a table of action names to violation counts for a player.
+]]
+function RateLimiter.getPlayerViolations(player: Player): { [string]: number }
 	if not ValidationUtils.isValidPlayer(player) then
 		return {}
 	end
 
 	local userId = player.UserId
 	local playerData = rateLimitData[userId]
-	local violations = {}
+	local violations: { [string]: number } = {}
 
 	if playerData then
 		for actionName, entry in playerData do
@@ -220,11 +214,17 @@ function RateLimiter.getPlayerViolations(player)
 	return violations
 end
 
+--[[
+	Clears all rate limit data (useful for testing).
+]]
 function RateLimiter.clearAllData()
-	rateLimitData = {}
+	table.clear(rateLimitData)
 end
 
-function RateLimiter.getTrackedPlayerCount()
+--[[
+	Returns the number of players currently being tracked.
+]]
+function RateLimiter.getTrackedPlayerCount(): number
 	local count = 0
 	for _ in rateLimitData do
 		count += 1
@@ -232,10 +232,7 @@ function RateLimiter.getTrackedPlayerCount()
 	return count
 end
 
---------------------
--- Initialization --
---------------------
-
+-- Initialization
 local function initialize()
 	connectionsMaid:add(Players.PlayerRemoving:Connect(onPlayerRemoving))
 	startCleanupLoop()
@@ -248,9 +245,5 @@ end
 
 initialize()
 game:BindToClose(bindToClose)
-
--------------------
--- Return Module --
--------------------
 
 return RateLimiter

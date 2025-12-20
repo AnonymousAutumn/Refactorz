@@ -1,30 +1,33 @@
------------------
--- Init Module --
------------------
+--[[
+	GameTiming - Manages game timing and timeouts.
+
+	Features:
+	- Turn timeout tracking
+	- Drop cooldown scheduling
+	- Reset delay handling
+]]
 
 local GameTiming = {}
 GameTiming.__index = GameTiming
-
----------------
--- Constants --
----------------
 
 local TURN_TIMEOUT = 30
 local TOKEN_DROP_COOLDOWN = 0.65
 local RESET_DELAY = 3
 
----------------
--- Functions --
----------------
-
-function GameTiming.new()
+--[[
+	Creates a new GameTiming instance.
+]]
+function GameTiming.new(): any
 	local self = setmetatable({}, GameTiming) 
 	self.currentTimeoutId = 0
 	
 	return self 
 end
 
-function GameTiming:startTurnTimeout(onTimeout)
+--[[
+	Starts a turn timeout timer.
+]]
+function GameTiming:startTurnTimeout(onTimeout: () -> ())
 	self.currentTimeoutId += 1
 	local timeoutId = self.currentTimeoutId
 
@@ -35,24 +38,32 @@ function GameTiming:startTurnTimeout(onTimeout)
 	end)
 end
 
+--[[
+	Cancels the current timeout.
+]]
 function GameTiming:cancelCurrentTimeout()
 	self.currentTimeoutId += 1
 end
 
-function GameTiming.scheduleReset(callback)
+--[[
+	Schedules a game reset after delay.
+]]
+function GameTiming.scheduleReset(callback: () -> ())
 	task.delay(RESET_DELAY, callback)
 end
 
-function GameTiming.scheduleDropCooldown(callback)
+--[[
+	Schedules callback after drop cooldown.
+]]
+function GameTiming.scheduleDropCooldown(callback: () -> ())
 	task.delay(TOKEN_DROP_COOLDOWN, callback)
 end
 
-function GameTiming.getTurnTimeout()
+--[[
+	Gets the turn timeout value.
+]]
+function GameTiming.getTurnTimeout(): number
 	return TURN_TIMEOUT
 end
-
--------------------
--- Return Module --
--------------------
 
 return GameTiming

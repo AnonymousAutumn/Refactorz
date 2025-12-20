@@ -1,15 +1,19 @@
------------------
--- Init Module --
------------------
+--[[
+	BoardState - Manages Connect4 board state.
+
+	Features:
+	- Grid state tracking
+	- Token placement
+	- Win condition support
+]]
 
 local BoardState = {}
 BoardState.__index = BoardState
 
----------------
--- Functions --
----------------
-
-function BoardState.new(rows, columns)
+--[[
+	Creates a new board state instance.
+]]
+function BoardState.new(rows: number, columns: number): any
 	local self = setmetatable({}, BoardState) 
 
 	self.rows = rows
@@ -25,7 +29,10 @@ function BoardState.new(rows, columns)
 	return self 
 end
 
-function BoardState:findLowestAvailableRow(column)
+--[[
+	Finds the lowest empty row in a column.
+]]
+function BoardState:findLowestAvailableRow(column: number): number?
 	for row = 1, self.rows do
 		if not self.state[column][row] then
 			return row
@@ -34,7 +41,10 @@ function BoardState:findLowestAvailableRow(column)
 	return nil
 end
 
-function BoardState:isBoardFull()
+--[[
+	Checks if the board is completely full.
+]]
+function BoardState:isBoardFull(): boolean
 	for column = 1, self.columns do
 		if self:findLowestAvailableRow(column) then
 			return false
@@ -43,14 +53,20 @@ function BoardState:isBoardFull()
 	return true
 end
 
-function BoardState:placeToken(column, row, teamIndex, tokenInstance)
+--[[
+	Places a token at the specified position.
+]]
+function BoardState:placeToken(column: number, row: number, teamIndex: number, tokenInstance: BasePart?)
 	self.state[column][row] = teamIndex
 	if tokenInstance then
 		self.tokenInstances[column][row] = tokenInstance
 	end
 end
 
-function BoardState:getTokenInstance(column, row)
+--[[
+	Gets the token instance at a position.
+]]
+function BoardState:getTokenInstance(column: number, row: number): BasePart?
 	local columnData = self.tokenInstances[column]
 	if columnData then
 		return columnData[row]
@@ -58,6 +74,9 @@ function BoardState:getTokenInstance(column, row)
 	return nil
 end
 
+--[[
+	Resets the board to empty state.
+]]
 function BoardState:reset()
 	for column = 1, self.columns do
 		for row = 1, self.rows do
@@ -67,16 +86,15 @@ function BoardState:reset()
 	end
 end
 
-function BoardState:getState(column, row)
+--[[
+	Gets the team index at a position.
+]]
+function BoardState:getState(column: number, row: number): number?
 	local columnData = self.state[column]
 	if columnData then
 		return columnData[row]
 	end
 	return nil
 end
-
--------------------
--- Return Module --
--------------------
 
 return BoardState

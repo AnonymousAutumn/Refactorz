@@ -1,12 +1,13 @@
------------------
--- Init Module --
------------------
+--[[
+	WinDetection - Detects win conditions in Connect4.
+
+	Features:
+	- Four-in-a-row detection
+	- Multi-directional checking
+	- Winning position tracking
+]]
 
 local WinDetection = {}
-
----------------
--- Constants --
----------------
 
 local WIN_CONDITION = 4
 
@@ -17,17 +18,16 @@ local DIRECTIONS = {
 	{ 1, -1 },
 }
 
----------------
--- Functions --
----------------
-
-function WinDetection.checkWin(boardState, column, row, teamIndex)
-	for _, direction in DIRECTIONS do
+--[[
+	Checks for a win from the last placed token.
+]]
+function WinDetection.checkWin(boardState: any, column: number, row: number, teamIndex: number): any
+	for _, direction in pairs(DIRECTIONS) do
 		local dx, dy = direction[1], direction[2]
 		local count = 1
 		local positions = { { column, row } }
 
-		for _, multiplier in { 1, -1 } do
+		for _, multiplier in pairs({ 1, -1 }) do
 			local step = 1
 			while true do
 				local checkColumn = column + dx * step * multiplier
@@ -57,9 +57,5 @@ function WinDetection.checkWin(boardState, column, row, teamIndex)
 		winningPositions = nil,
 	}
 end
-
--------------------
--- Return Module --
--------------------
 
 return WinDetection

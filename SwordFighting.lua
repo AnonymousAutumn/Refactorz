@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	SwordFighting - Server-side combat zone management.
+
+	Features:
+	- Combat zone detection
+	- Tool distribution
+	- Kill tracking and wins
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
@@ -27,24 +28,12 @@ local worldFolder = workspace.World
 local environmentFolder = worldFolder.Environment
 local combatZonePart = environmentFolder.CombatZonePart
 
----------------
--- Constants --
----------------
-
 local FIGHTING_ATTRIBUTE_NAME = "Fighting"
-
----------------
--- Variables --
----------------
 
 local connectionsMaid = Connections.new()
 local playerConnections = {}
 
----------------
--- Functions --
----------------
-
-local function getHumanoidFromCharacter(char)
+local function getHumanoidFromCharacter(char: Model?): Humanoid?
 	if not ValidationUtils.isValidCharacter(char) then
 		return nil
 	end
@@ -52,27 +41,27 @@ local function getHumanoidFromCharacter(char)
 	return if ValidationUtils.isValidHumanoid(hum) then hum else nil
 end
 
-local function isPlayerInCombat(char)
+local function isPlayerInCombat(char: Model): boolean
 	return char:GetAttribute(FIGHTING_ATTRIBUTE_NAME) == true
 end
 
-local function giveToolWrapper(targetPlayer)
+local function giveToolWrapper(targetPlayer: Player)
 	ToolManager.giveToolToPlayer(targetPlayer, getHumanoidFromCharacter)
 end
 
-local function removeToolWrapper(targetPlayer)
+local function removeToolWrapper(targetPlayer: Player)
 	ToolManager.removeToolFromPlayer(targetPlayer)
 end
 
-local function recordWinWrapper(userId, wins)
+local function recordWinWrapper(userId: number, wins: number)
 	DataPersistence.recordPlayerWin(userId, wins)
 end
 
-local function handleEliminationWrapper(victim, killer)
+local function handleEliminationWrapper(victim: Player, killer: Player?)
 	EliminationHandler.handlePlayerElimination(victim, killer, recordWinWrapper)
 end
 
-local function setupCharacter(player, character)
+local function setupCharacter(player: Player, character: Model)
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if not humanoid then
 		warn(`[{script.Name}] Humanoid not found for {player.Name}`)
@@ -114,7 +103,7 @@ local function setupCharacter(player, character)
 	end))
 end
 
-local function cleanupPlayer(player)
+local function cleanupPlayer(player: Player)
 
 	ZoneDetector.stopMonitoring(player)
 
@@ -125,7 +114,7 @@ local function cleanupPlayer(player)
 	end
 end
 
-local function onPlayerAdded(player)
+local function onPlayerAdded(player: Player)
 
 	connectionsMaid:add(player.CharacterAdded:Connect(function(character)
 		setupCharacter(player, character)
@@ -136,7 +125,7 @@ local function onPlayerAdded(player)
 	end
 end
 
-local function onPlayerRemoving(player)
+local function onPlayerRemoving(player: Player)
 	cleanupPlayer(player)
 end
 
@@ -161,9 +150,5 @@ local function initialize()
 
 	game:BindToClose(cleanup)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

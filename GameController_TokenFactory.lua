@@ -1,27 +1,20 @@
------------------
--- Init Module --
------------------
+--[[
+	TokenFactory - Creates and animates game tokens.
+
+	Features:
+	- Token instantiation
+	- Drop animation
+	- Victory effects
+]]
 
 local TokenFactory = {}
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-----------------
--- References --
-----------------
-
 local instancesFolder = ReplicatedStorage.Instances
 local objectsFolder = instancesFolder.Objects
 local tokenPrefab = objectsFolder.Token
-
----------------
--- Constants --
----------------
 
 local CONFIG = {
 	TOKEN = {
@@ -37,15 +30,14 @@ local CONFIG = {
 	},
 }
 
----------------
--- Functions --
----------------
-
-local function getTeamColor(teamIndex)
+local function getTeamColor(teamIndex: number): string
 	return CONFIG.TEAMS[teamIndex] or CONFIG.TEAMS[0]
 end
 
-function TokenFactory.createToken(container, config)
+--[[
+	Creates a token and animates its drop.
+]]
+function TokenFactory.createToken(container: Instance, config: any): BasePart?
 	if not config.triggerPosition then
 		return nil
 	end
@@ -71,13 +63,12 @@ function TokenFactory.createToken(container, config)
 	return token
 end
 
-function TokenFactory.applyVictoryEffects(token)
+--[[
+	Applies visual effects to winning tokens.
+]]
+function TokenFactory.applyVictoryEffects(token: BasePart)
 	token.Material = Enum.Material.Neon
 	token.Transparency = 0.25
 end
-
--------------------
--- Return Module --
--------------------
 
 return TokenFactory

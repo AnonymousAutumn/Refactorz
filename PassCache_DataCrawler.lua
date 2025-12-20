@@ -1,24 +1,33 @@
------------------
--- Init Module --
------------------
+--[[
+	DataCrawler - Fetches player data with retry logic.
 
-local DataLoader = {}
+	Features:
+	- Safe data fetching with retries
+	- Dependency injection for testability
+	- Cache clear waiting with timeout
+]]
 
----------------
--- Variables --
----------------
+local DataCrawler = {}
 
-local deps = nil 
+export type Dependencies = {
+	passesLoader: any,
+	createEmptyEntry: (userId: number) -> any,
+}
 
----------------
--- Functions --
----------------
+local deps: Dependencies? = nil
 
-function DataLoader.initialize(dependencies)
+--[[
+	Initializes the data crawler with dependencies.
+]]
+function DataCrawler.initialize(dependencies: Dependencies)
 	deps = dependencies
 end
 
-function DataLoader.fetchPlayerDataSafely(userId, retryAttempts, retryDelay)
+--[[
+	Fetches player data safely with retry logic.
+	Returns (success, dataEntry) tuple.
+]]
+function DataCrawler.fetchPlayerDataSafely(userId: number, retryAttempts: number, retryDelay: number): (boolean, any?)
 	local lastError = nil
 
 	for attempt = 1, retryAttempts do
@@ -29,7 +38,7 @@ function DataLoader.fetchPlayerDataSafely(userId, retryAttempts, retryDelay)
 			local dataEntry = deps.createEmptyEntry(userId)
 			dataEntry.gamepasses = playerOwnedGamepasses or {}
 			dataEntry.games = playerOwnedGames or {}
-			
+
 			return true, dataEntry
 		end
 
@@ -42,17 +51,21 @@ function DataLoader.fetchPlayerDataSafely(userId, retryAttempts, retryDelay)
 	end
 
 	warn(`[{script.Name}] Failed to fetch data for {userId} after {retryAttempts} attempts`)
-	
+
 	return false, nil
 end
 
-function DataLoader.waitForCacheClear(playerCache, targetPlayer, timeoutSeconds, checkInterval)
+--[[
+	Waits for a player's cache to be cleared with timeout.
+	Returns true if cleared, false if timeout.
+]]
+function DataCrawler.waitForCacheClear(playerCache: { [Player]: any }, targetPlayer: Player, timeoutSeconds: number, checkInterval: number): boolean
 	local cacheWaitStartTime = os.clock()
 
 	while playerCache[targetPlayer] do
 		if os.clock() - cacheWaitStartTime > timeoutSeconds then
 			warn(`[{script.Name}] Cache clear timeout for player {targetPlayer.Name} (UserId: {targetPlayer.UserId})`)
-			
+
 			return false
 		end
 		task.wait(checkInterval)
@@ -61,8 +74,4 @@ function DataLoader.waitForCacheClear(playerCache, targetPlayer, timeoutSeconds,
 	return true
 end
 
--------------------
--- Return Module --
--------------------
-
-return DataLoader
+return DataCrawler

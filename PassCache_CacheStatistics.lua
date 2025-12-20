@@ -1,29 +1,40 @@
------------------
--- Init Module --
------------------
+--[[
+	CacheStatistics - Gathers and reports cache statistics.
+
+	Features:
+	- Entry counting
+	- Age tracking (oldest/newest)
+	- Temporary cache statistics
+]]
 
 local CacheStatistics = {}
 
----------------
--- Functions --
----------------
+export type Statistics = {
+	totalEntries: number,
+	oldestEntry: number?,
+	newestEntry: number?,
+	temporaryEntries: number,
+}
 
-local function countTableEntries(tbl)
+local function countTableEntries(tbl: { [any]: any }): number
 	local count = 0
-	for _ in tbl do
+	for _ in pairs(tbl) do
 		count += 1
 	end
-	
+
 	return count
 end
 
-function CacheStatistics.gather(playerCache, temporaryCache)
+--[[
+	Gathers statistics about the current cache state.
+]]
+function CacheStatistics.gather(playerCache: { [Player]: any }, temporaryCache: { [number]: any }): Statistics
 	local totalEntries = 0
 	local oldestEntry = nil
 	local newestEntry = nil
 	local currentTime = os.time()
 
-	for _, cacheEntry in playerCache do
+	for _, cacheEntry in pairs(playerCache) do
 		totalEntries += 1
 
 		local age = currentTime - cacheEntry.metadata.loadedAt
@@ -46,9 +57,5 @@ function CacheStatistics.gather(playerCache, temporaryCache)
 		temporaryEntries = temporaryEntries,
 	}
 end
-
--------------------
--- Return Module --
--------------------
 
 return CacheStatistics

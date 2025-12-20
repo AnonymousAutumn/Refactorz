@@ -1,22 +1,20 @@
------------------
--- Init Module --
------------------
+--[[
+	PassCache - Caches player gamepass data with automatic lifecycle management.
+
+	Features:
+	- Player-specific gamepass data caching
+	- Temporary gift recipient caching
+	- Automatic stale cache cleanup
+	- Cache reload with timeout protection
+]]
 
 local PassCache = {}
 PassCache.playerPassCaches = {}
 PassCache.temporaryGiftCaches = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration
@@ -27,10 +25,6 @@ local CacheOperations = require(script.CacheOperations)
 local CacheLifecycle = require(script.CacheLifecycle)
 local CacheStatistics = require(script.CacheStatistics)
 local DataCrawler = require(script.DataCrawler)
-
----------------
--- Constants --
----------------
 
 local CACHE_OPERATION_TIMEOUT_SECONDS = 15
 local CACHE_CLEAR_CHECK_INTERVAL_SECONDS = 0.1
@@ -48,11 +42,11 @@ local KICK_MESSAGES = {
 	RELOAD_FAILED = "Cache reload failed. Please rejoin.",
 }
 
----------------
--- Functions --
----------------
-
-function PassCache.LoadPlayerGamepassDataIntoCache(targetPlayer)
+--[[
+	Loads player gamepass data into the cache.
+	Returns true if successful, false if failed (player is kicked).
+]]
+function PassCache.LoadPlayerGamepassDataIntoCache(targetPlayer: Player): boolean
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		warn(`Attempt to load cache for {tostring(targetPlayer)} failed`)
 		return false
@@ -83,7 +77,11 @@ function PassCache.LoadPlayerGamepassDataIntoCache(targetPlayer)
 	return true
 end
 
-function PassCache.LoadGiftRecipientGamepassDataTemporarily(recipientUserId)
+--[[
+	Loads gift recipient data into temporary cache.
+	Returns the cache entry if successful, nil if failed.
+]]
+function PassCache.LoadGiftRecipientGamepassDataTemporarily(recipientUserId: number): any?
 	local cachedEntry = PassCache.temporaryGiftCaches[recipientUserId]
 	if cachedEntry then
 		local currentTime = os.time()
@@ -109,7 +107,11 @@ function PassCache.LoadGiftRecipientGamepassDataTemporarily(recipientUserId)
 	return temporaryDataCacheEntry
 end
 
-function PassCache.ReloadPlayerGamepassDataCache(targetPlayer)
+--[[
+	Reloads a player's gamepass data cache.
+	Returns true if successful, false if failed (player is kicked).
+]]
+function PassCache.ReloadPlayerGamepassDataCache(targetPlayer: Player): boolean
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		warn("Invalid argument: player expected")
 		return false
@@ -155,13 +157,19 @@ function PassCache.ReloadPlayerGamepassDataCache(targetPlayer)
 	return true
 end
 
-function PassCache.UnloadPlayerDataFromCache(targetPlayer)
+--[[
+	Removes a player's data from the cache.
+]]
+function PassCache.UnloadPlayerDataFromCache(targetPlayer: Player)
 	if PassCache.playerPassCaches[targetPlayer] then
 		PassCache.playerPassCaches[targetPlayer] = nil
 	end
 end
 
-function PassCache.GetPlayerCachedGamepassData(targetPlayer)
+--[[
+	Returns a copy of the player's cached gamepass data.
+]]
+function PassCache.GetPlayerCachedGamepassData(targetPlayer: Player): any?
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		warn(`Failed to get cache for {targetPlayer.Name}`)
 
@@ -178,19 +186,25 @@ function PassCache.GetPlayerCachedGamepassData(targetPlayer)
 	return CacheOperations.createCopy(playerCachedData)
 end
 
+--[[
+	Clears all cached data from both player and temporary caches.
+]]
 function PassCache.ClearAllCachedData()
-	local playerCount = CacheOperations.countEntries(PassCache.playerPassCaches)
-	local tempCount = CacheOperations.countEntries(PassCache.temporaryGiftCaches)
-
 	table.clear(PassCache.playerPassCaches)
 	table.clear(PassCache.temporaryGiftCaches)
 end
 
-function PassCache.GetCacheStatistics()
+--[[
+	Returns statistics about the current cache state.
+]]
+function PassCache.GetCacheStatistics(): any
 	return CacheStatistics.gather(PassCache.playerPassCaches, PassCache.temporaryGiftCaches)
 end
 
-function PassCache.GetPlayerGamepassesAsList(targetPlayer)
+--[[
+	Returns the list of gamepasses for a player.
+]]
+function PassCache.GetPlayerGamepassesAsList(targetPlayer: Player): { any }?
 	local data = PassCache.GetPlayerCachedGamepassData(targetPlayer)
 	if not data then
 		return nil
@@ -199,7 +213,10 @@ function PassCache.GetPlayerGamepassesAsList(targetPlayer)
 	return data.gamepasses
 end
 
-function PassCache.GetGiftRecipientGamepassesAsList(recipientUserId)
+--[[
+	Returns the list of gamepasses for a gift recipient.
+]]
+function PassCache.GetGiftRecipientGamepassesAsList(recipientUserId: number): { any }?
 	local data = PassCache.LoadGiftRecipientGamepassDataTemporarily(recipientUserId)
 	if not data then
 		return nil
@@ -207,10 +224,6 @@ function PassCache.GetGiftRecipientGamepassesAsList(recipientUserId)
 
 	return data.gamepasses
 end
-
---------------------
--- Initialization --
---------------------
 
 CacheLifecycle.initialize({
 	checkStaleFunc = CacheOperations.isStale,
@@ -244,9 +257,5 @@ if RunService:IsServer() then
 	end)
 
 end
-
--------------------
--- Return Module --
--------------------
 
 return PassCache

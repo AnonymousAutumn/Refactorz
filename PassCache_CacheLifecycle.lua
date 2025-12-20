@@ -1,20 +1,36 @@
------------------
--- Init Module --
------------------
+--[[
+	CacheLifecycle - Manages cache cleanup and lifecycle.
+
+	Features:
+	- Automatic stale entry removal
+	- Configurable cleanup intervals
+	- Graceful shutdown handling
+]]
 
 local CacheLifecycle = {}
 
----------------
--- Variables --
----------------
+export type LifecycleConfig = {
+	checkStaleFunc: (cacheEntry: any, currentTime: number, maxAge: number) -> boolean,
+	isValidPlayerFunc: (player: Player) -> boolean,
+}
 
-local state = nil
+export type CleanupConfig = {
+	enabled: boolean,
+	intervalSeconds: number,
+	maxAgeSeconds: number,
+}
 
----------------
--- Functions --
----------------
+local state: {
+	cleanupThread: thread?,
+	isShuttingDown: boolean,
+	checkStaleFunc: ((any, number, number) -> boolean)?,
+	isValidPlayerFunc: ((Player) -> boolean)?,
+}? = nil
 
-function CacheLifecycle.initialize(config)
+--[[
+	Initializes the lifecycle manager with configuration.
+]]
+function CacheLifecycle.initialize(config: LifecycleConfig)
 	state = {
 		cleanupThread = nil,
 		isShuttingDown = false,
@@ -23,46 +39,60 @@ function CacheLifecycle.initialize(config)
 	}
 end
 
+--[[
+	Cancels any active cleanup thread.
+]]
 function CacheLifecycle.cancelCleanupThread()
-	if state.cleanupThread then
+	if state and state.cleanupThread then
 		task.cancel(state.cleanupThread)
 		state.cleanupThread = nil
 	end
 end
 
-function CacheLifecycle.removeStalePlayerEntries(playerCache, currentTime, maxAge)
-	local playersToRemove = {}
+--[[
+	Removes stale player entries from the cache.
+	Returns the number of entries removed.
+]]
+function CacheLifecycle.removeStalePlayerEntries(playerCache: { [Player]: any }, currentTime: number, maxAge: number): number
+	local playersToRemove: { Player } = {}
 
-	for player, cacheEntry in playerCache do
+	for player, cacheEntry in pairs(playerCache) do
 		if state.checkStaleFunc(cacheEntry, currentTime, maxAge) or not state.isValidPlayerFunc(player) then
 			table.insert(playersToRemove, player)
 		end
 	end
 
-	for _, player in playersToRemove do
+	for _, player in pairs(playersToRemove) do
 		playerCache[player] = nil
 	end
 
 	return #playersToRemove
 end
 
-function CacheLifecycle.removeStaleTempEntries(temporaryCache, currentTime, maxAge)
-	local userIdsToRemove = {}
+--[[
+	Removes stale temporary entries from the cache.
+	Returns the number of entries removed.
+]]
+function CacheLifecycle.removeStaleTempEntries(temporaryCache: { [number]: any }, currentTime: number, maxAge: number): number
+	local userIdsToRemove: { number } = {}
 
-	for userId, cacheEntry in temporaryCache do
+	for userId, cacheEntry in pairs(temporaryCache) do
 		if state.checkStaleFunc(cacheEntry, currentTime, maxAge) then
 			table.insert(userIdsToRemove, userId)
 		end
 	end
 
-	for _, userId in userIdsToRemove do
+	for _, userId in pairs(userIdsToRemove) do
 		temporaryCache[userId] = nil
 	end
 
 	return #userIdsToRemove
 end
 
-function CacheLifecycle.performCleanup(playerCache, temporaryCache, maxAge)
+--[[
+	Performs a cleanup pass on both caches.
+]]
+function CacheLifecycle.performCleanup(playerCache: { [Player]: any }, temporaryCache: { [number]: any }, maxAge: number)
 	if state.isShuttingDown then
 		return
 	end
@@ -73,7 +103,10 @@ function CacheLifecycle.performCleanup(playerCache, temporaryCache, maxAge)
 	CacheLifecycle.removeStaleTempEntries(temporaryCache, currentTime, maxAge)
 end
 
-function CacheLifecycle.startCleanupLoop(playerCache, temporaryCache, config)
+--[[
+	Starts the background cleanup loop.
+]]
+function CacheLifecycle.startCleanupLoop(playerCache: { [Player]: any }, temporaryCache: { [number]: any }, config: CleanupConfig)
 	if not config.enabled or state.cleanupThread then
 		return
 	end
@@ -86,16 +119,20 @@ function CacheLifecycle.startCleanupLoop(playerCache, temporaryCache, config)
 	end)
 end
 
+--[[
+	Stops the background cleanup loop.
+]]
 function CacheLifecycle.stopCleanupLoop()
 	CacheLifecycle.cancelCleanupThread()
 end
 
-function CacheLifecycle.setShuttingDown(value)
-	state.isShuttingDown = value
+--[[
+	Sets the shutdown flag to stop cleanup operations.
+]]
+function CacheLifecycle.setShuttingDown(value: boolean)
+	if state then
+		state.isShuttingDown = value
+	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return CacheLifecycle

@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	ToolManager - Manages combat tools for players.
+
+	Features:
+	- Tool distribution
+	- Tool removal
+	- Backpack/character detection
+]]
 
 local ToolManager = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
@@ -21,17 +18,9 @@ local instancesFolder = ReplicatedStorage.Instances
 local toolsFolder = instancesFolder.Tools
 local swordPrefab = toolsFolder.ClassicSword
 
----------------
--- Constants --
----------------
-
 local TOOL_NAME = swordPrefab.Name
 
----------------
--- Functions --
----------------
-
-local function hasToolInBackpack(targetPlayer)
+local function hasToolInBackpack(targetPlayer: Player): boolean
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return false
 	end
@@ -40,7 +29,7 @@ local function hasToolInBackpack(targetPlayer)
 	return backpack ~= nil and backpack:FindFirstChild(TOOL_NAME) ~= nil
 end
 
-local function hasToolInCharacter(targetPlayer)
+local function hasToolInCharacter(targetPlayer: Player): boolean
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return false
 	end
@@ -49,11 +38,14 @@ local function hasToolInCharacter(targetPlayer)
 	return char ~= nil and char:FindFirstChild(TOOL_NAME) ~= nil
 end
 
-local function playerHasTool(targetPlayer)
+local function playerHasTool(targetPlayer: Player): boolean
 	return hasToolInBackpack(targetPlayer) or hasToolInCharacter(targetPlayer)
 end
 
-function ToolManager.giveToolToPlayer(targetPlayer, getHumanoidFunc: (Model) -> Humanoid?)
+--[[
+	Gives a tool to the specified player.
+]]
+function ToolManager.giveToolToPlayer(targetPlayer: Player, getHumanoidFunc: (Model) -> Humanoid?)
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return
 	end
@@ -83,7 +75,10 @@ function ToolManager.giveToolToPlayer(targetPlayer, getHumanoidFunc: (Model) -> 
 	end
 end
 
-function ToolManager.removeToolFromPlayer(targetPlayer)
+--[[
+	Removes the tool from the specified player.
+]]
+function ToolManager.removeToolFromPlayer(targetPlayer: Player)
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return
 	end
@@ -109,9 +104,5 @@ function ToolManager.removeToolFromPlayer(targetPlayer)
 		warn(`[{script.Name}] Failed to remove tool from player {targetPlayer.Name}: {tostring(errorMessage)}`)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return ToolManager

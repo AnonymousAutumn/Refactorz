@@ -1,19 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	ZoneDetector - Monitors player zone entry and exit.
+
+	Features:
+	- Combat zone detection
+	- Player monitoring with heartbeat
+	- Zone state tracking
+]]
 
 local ZoneDetector = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -21,10 +18,6 @@ local updateGameUIRemoteEvent = remoteEvents.UpdateGameUI
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local FIGHTING_ATTRIBUTE_NAME = "Fighting"
 local ZONE_UPDATE_INTERVAL = 0.2
@@ -34,17 +27,9 @@ local COMBAT_MESSAGES = {
 	Exit = "Left combat",
 }
 
----------------
--- Variables --
----------------
-
 local activeMonitors = {}
 
----------------
--- Functions --
----------------
-
-local function handleCombatZoneEntry(targetPlayer, giveToolFunc)
+local function handleCombatZoneEntry(targetPlayer: Player, giveToolFunc: (Player) -> ())
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return
 	end
@@ -64,7 +49,7 @@ local function handleCombatZoneEntry(targetPlayer, giveToolFunc)
 	end
 end
 
-local function handleCombatZoneExit(targetPlayer, removeToolFunc)
+local function handleCombatZoneExit(targetPlayer: Player, removeToolFunc: (Player) -> ())
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return
 	end
@@ -84,7 +69,10 @@ local function handleCombatZoneExit(targetPlayer, removeToolFunc)
 	end
 end
 
-function ZoneDetector.stopMonitoring(player)
+--[[
+	Stops monitoring a player's zone status.
+]]
+function ZoneDetector.stopMonitoring(player: Player)
 	local monitor = activeMonitors[player]
 	if monitor then
 		if monitor.connection then
@@ -94,7 +82,10 @@ function ZoneDetector.stopMonitoring(player)
 	end
 end
 
-function ZoneDetector.startMonitoring(player, combatZonePart, isPlayerInPartFunc, giveToolFunc, removeToolFunc)
+--[[
+	Starts monitoring a player's zone status.
+]]
+function ZoneDetector.startMonitoring(player: Player, combatZonePart: BasePart, isPlayerInPartFunc: (Player, BasePart) -> boolean, giveToolFunc: (Player) -> (), removeToolFunc: (Player) -> ())
 	ZoneDetector.stopMonitoring(player)
 
 	local lastZoneUpdate = 0
@@ -138,20 +129,22 @@ function ZoneDetector.startMonitoring(player, combatZonePart, isPlayerInPartFunc
 	}
 end
 
-function ZoneDetector.isMonitoring(player)
+--[[
+	Checks if a player is being monitored.
+]]
+function ZoneDetector.isMonitoring(player: Player): boolean
 	return activeMonitors[player] ~= nil
 end
 
-function ZoneDetector.getZoneState(player)
+--[[
+	Gets the current zone state for a player.
+]]
+function ZoneDetector.getZoneState(player: Player): boolean?
 	local monitor = activeMonitors[player]
 	if monitor then
 		return monitor.wasInZone
 	end
 	return nil
 end
-
--------------------
--- Return Module --
--------------------
 
 return ZoneDetector

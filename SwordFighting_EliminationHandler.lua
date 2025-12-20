@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	EliminationHandler - Handles player elimination and kill credits.
+
+	Features:
+	- Kill credit detection
+	- Elimination notifications
+	- Sound effect triggers
+]]
 
 local EliminationHandler = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -22,18 +19,10 @@ local playSoundRemoteEvent = remoteEvents.PlaySound
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 
----------------
--- Constants --
----------------
-
 local BLOXXED_MESSAGE_FORMAT = "Bloxxed %s!"
 local KILL_CREDIT = 1
 
----------------
--- Functions --
----------------
-
-local function getKillerFromCreatorTag(hum)
+local function getKillerFromCreatorTag(hum: Humanoid): Player?
 	local creatorTag = hum:FindFirstChild("creator")
 	if not creatorTag or not creatorTag:IsA("ObjectValue") then
 		return nil
@@ -43,7 +32,7 @@ local function getKillerFromCreatorTag(hum)
 	return if creatorValue and creatorValue:IsA("Player") then creatorValue else nil
 end
 
-local function playSound(targetPlayer, soundEnabled)
+local function playSound(targetPlayer: Player, soundEnabled: boolean)
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		return
 	end
@@ -57,7 +46,7 @@ local function playSound(targetPlayer, soundEnabled)
 	end
 end
 
-local function notifyKillerOfElimination(killer, victimName)
+local function notifyKillerOfElimination(killer: Player, victimName: string)
 	if not ValidationUtils.isValidPlayer(killer) then
 		return
 	end
@@ -74,7 +63,7 @@ local function notifyKillerOfElimination(killer, victimName)
 	playSound(killer, false)
 end
 
-local function handleEliminationWithKiller(victim, killer, recordWinFunc)
+local function handleEliminationWithKiller(victim: Player, killer: Player, recordWinFunc: (number, number) -> ())
 	if not ValidationUtils.isValidPlayer(victim) or not ValidationUtils.isValidPlayer(killer) then
 		return
 	end
@@ -83,11 +72,17 @@ local function handleEliminationWithKiller(victim, killer, recordWinFunc)
 	notifyKillerOfElimination(killer, victim.Name)
 end
 
-function EliminationHandler.getKillerFromHumanoid(hum)
+--[[
+	Gets the killer player from a humanoid's creator tag.
+]]
+function EliminationHandler.getKillerFromHumanoid(hum: Humanoid): Player?
 	return getKillerFromCreatorTag(hum)
 end
 
-function EliminationHandler.handlePlayerElimination(victim, killer, recordWinFunc)
+--[[
+	Handles player elimination and notifies the killer.
+]]
+function EliminationHandler.handlePlayerElimination(victim: Player, killer: Player?, recordWinFunc: (number, number) -> ())
 	if not ValidationUtils.isValidPlayer(victim) then
 		return
 	end
@@ -97,9 +92,5 @@ function EliminationHandler.handlePlayerElimination(victim, killer, recordWinFun
 		handleEliminationWithKiller(victim, killer, recordWinFunc)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return EliminationHandler

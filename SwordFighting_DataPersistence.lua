@@ -1,34 +1,22 @@
------------------
--- Init Module --
------------------
+--[[
+	DataPersistence - Records player wins to persistent storage.
+
+	Features:
+	- DataStore win recording
+	- PlayerData statistics updates
+]]
 
 local DataPersistence = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local PlayerData = require(modulesFolder.Managers.PlayerData)
 local DataStores = require(modulesFolder.Wrappers.DataStores)
 
----------------
--- Constants --
----------------
-
 local WINS_STAT_KEY = "Wins"
 
----------------
--- Functions --
----------------
-
-local function updateWinsDataStore(playerId, increment)
+local function updateWinsDataStore(playerId: number, increment: number): number
 	local success, result = DataStores.Wins:incrementAsync(tostring(playerId), increment)
 
 	if not success then
@@ -39,7 +27,10 @@ local function updateWinsDataStore(playerId, increment)
 	return result or 0
 end
 
-function DataPersistence.recordPlayerWin(playerUserId, wins)
+--[[
+	Records a player win to DataStore and PlayerData.
+]]
+function DataPersistence.recordPlayerWin(playerUserId: number, wins: number)
 	updateWinsDataStore(playerUserId, wins)
 
 	local success, errorMessage = pcall(function()
@@ -50,9 +41,5 @@ function DataPersistence.recordPlayerWin(playerUserId, wins)
 		warn(`[{script.Name}] Failed to update player statistics for {playerUserId}: {tostring(errorMessage)}`)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return DataPersistence

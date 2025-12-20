@@ -1,19 +1,16 @@
---------------
--- Services --
---------------
+--[[
+	DeathUIController - Displays death UI animation.
+
+	Features:
+	- Banner animation with tween effects
+	- Stale animation abort handling
+	- Auto-cleanup on completion
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local TweenHelper = require(modulesFolder.Utilities.TweenHelper)
-
----------------
--- Constants --
----------------
 
 local DURATION = {
 	FadeIn = 0.2,
@@ -25,25 +22,16 @@ local DURATION = {
 	ColorTransition = 0.2,
 }
 
----------------
--- Variables --
----------------
-
 local lastShownAtByUserId = {}
 
----------------
--- Functions --
----------------
-
-local function isValid(instance)
+local function isValid(instance: Instance): boolean
 	return instance ~= nil and instance.Parent ~= nil
 end
 
----------------------
--- Return Function --
----------------------
-
-return function(guiTemplate, targetPlayer)
+--[[
+	Displays a death UI animation for the target player.
+]]
+return function(guiTemplate: ScreenGui, targetPlayer: Player)
 	task.spawn(function()
 		local playerGui = targetPlayer:FindFirstChild("PlayerGui")
 		if not playerGui then

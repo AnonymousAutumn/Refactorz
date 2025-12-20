@@ -1,26 +1,19 @@
------------------
--- Init Module --
------------------
+--[[
+	StatisticsAPI - High-level API for player statistics management.
+
+	Features:
+	- Caching layer with debounced saves
+	- Cross-server synchronization
+	- Dependency injection for testability
+]]
 
 local StatisticsAPI = {}
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local DEFAULT_PLAYER_STATISTICS = {
 	Donated = 0,
@@ -30,23 +23,17 @@ local DEFAULT_PLAYER_STATISTICS = {
 
 local SAVE_DEBOUNCE_SECONDS = 15
 
----------------
--- Variables --
----------------
+export type StatisticName = "Donated" | "Raised" | "Wins"
 
-local DataCache = nil
-local DataStore = nil
-local CrossServerMessaging = nil
+local DataCache: any = nil
+local DataStore: any = nil
+local CrossServerMessaging: any = nil
 
----------------
--- Functions --
----------------
-
-local function isValidStatisticName(statisticName)
+local function isValidStatisticName(statisticName: string): boolean
 	return DEFAULT_PLAYER_STATISTICS[statisticName] ~= nil
 end
 
-local function scheduleDebouncedSave(playerUserId)
+local function scheduleDebouncedSave(playerUserId: string)
 	if DataCache.getSaveDelayHandle(playerUserId) then
 		return
 	end
@@ -65,10 +52,15 @@ local function scheduleDebouncedSave(playerUserId)
 		end
 	end)
 
-	DataCache.setSaveDelayHandle(playerUserId)
+	DataCache.setSaveDelayHandle(playerUserId, handle)
 end
 
-function StatisticsAPI.updatePlayerStatistic(playerUserId, statisticName, statisticAmount, shouldSetAbsoluteValue, isRemoteUpdate)
+--[[
+	Updates a player's statistic value.
+	Can either increment or set an absolute value.
+	Broadcasts changes via cross-server messaging if needed.
+]]
+function StatisticsAPI.updatePlayerStatistic(playerUserId: string | number, statisticName: StatisticName, statisticAmount: number, shouldSetAbsoluteValue: boolean?, isRemoteUpdate: boolean?)
 	local playerUserIdString = tostring(playerUserId)
 	local playerUserIdNumber = tonumber(playerUserId)
 
@@ -106,7 +98,7 @@ function StatisticsAPI.updatePlayerStatistic(playerUserId, statisticName, statis
 		scheduleDebouncedSave(playerUserIdString)
 	end
 
-	local targetPlayerInServer = Players:GetPlayerByUserId(playerUserIdNumber )
+	local targetPlayerInServer = Players:GetPlayerByUserId(playerUserIdNumber)
 	if targetPlayerInServer then
 		CrossServerMessaging.updatePlayerStats(
 			targetPlayerInServer,
@@ -115,22 +107,32 @@ function StatisticsAPI.updatePlayerStatistic(playerUserId, statisticName, statis
 		)
 	elseif not isRemoteUpdate then
 		CrossServerMessaging.publishUpdate({
-			UserId = playerUserIdNumber ,
+			UserId = playerUserIdNumber,
 			Stat = statisticName,
 			Value = playerStatisticsData[statisticName],
 		})
 	end
 end
 
-function StatisticsAPI.incrementPlayerStatistic(playerUserId, statisticName, incrementAmount, isRemoteUpdate)
+--[[
+	Increments a player's statistic by the given amount.
+]]
+function StatisticsAPI.incrementPlayerStatistic(playerUserId: string | number, statisticName: StatisticName, incrementAmount: number, isRemoteUpdate: boolean?)
 	StatisticsAPI.updatePlayerStatistic(playerUserId, statisticName, incrementAmount, false, isRemoteUpdate)
 end
 
-function StatisticsAPI.setPlayerStatisticAbsoluteValue(playerUserId, statisticName, absoluteValue, isRemoteUpdate)
+--[[
+	Sets a player's statistic to an absolute value.
+]]
+function StatisticsAPI.setPlayerStatisticAbsoluteValue(playerUserId: string | number, statisticName: StatisticName, absoluteValue: number, isRemoteUpdate: boolean?)
 	StatisticsAPI.updatePlayerStatistic(playerUserId, statisticName, absoluteValue, true, isRemoteUpdate)
 end
 
-function StatisticsAPI.getPlayerStatisticValue(playerUserId, statisticName)
+--[[
+	Returns the current value of a player's statistic.
+	Loads from DataStore if not cached.
+]]
+function StatisticsAPI.getPlayerStatisticValue(playerUserId: string | number, statisticName: StatisticName): number
 	local playerUserIdString = tostring(playerUserId)
 
 	local playerStatisticsData = DataCache.getCachedData(playerUserIdString)
@@ -142,20 +144,25 @@ function StatisticsAPI.getPlayerStatisticValue(playerUserId, statisticName)
 	return playerStatisticsData[statisticName] or 0
 end
 
-function StatisticsAPI.setDataCacheModule(module)
+--[[
+	Injects the DataCache module dependency.
+]]
+function StatisticsAPI.setDataCacheModule(module: any)
 	DataCache = module
 end
 
-function StatisticsAPI.setDataStoreModule(module)
+--[[
+	Injects the DataStore module dependency.
+]]
+function StatisticsAPI.setDataStoreModule(module: any)
 	DataStore = module
 end
 
-function StatisticsAPI.setCrossServerMessagingModule(module)
+--[[
+	Injects the CrossServerMessaging module dependency.
+]]
+function StatisticsAPI.setCrossServerMessagingModule(module: any)
 	CrossServerMessaging = module
 end
-
--------------------
--- Return Module --
--------------------
 
 return StatisticsAPI

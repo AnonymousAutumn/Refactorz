@@ -1,27 +1,20 @@
------------------
--- Init Module --
------------------
+--[[
+	DataStore - DataStore operations for player statistics.
+
+	Provides:
+	- Save/load player statistics with validation
+	- Receipt processing with idempotency checks
+	- Data sanitization to ensure valid values
+]]
 
 local DataStore = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 
 local DataStores = require(modulesFolder.Wrappers.DataStores)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local DEFAULT_PLAYER_STATISTICS = {
 	Donated = 0,
@@ -29,18 +22,23 @@ local DEFAULT_PLAYER_STATISTICS = {
 	Wins = 0,
 }
 
----------------
--- Functions --
----------------
+export type PlayerStatistics = {
+	Donated: number,
+	Raised: number,
+	Wins: number,
+	processedReceipts: { [string]: boolean }?,
+}
 
-local function validateAndSanitizeStatisticsData(data)
+export type ProcessResult = "newly_processed" | "already_processed" | "datastore_error" | "invalid_params"
+
+local function validateAndSanitizeStatisticsData(data: any): PlayerStatistics
 	if type(data) ~= "table" then
 		return table.clone(DEFAULT_PLAYER_STATISTICS)
 	end
 
 	local sanitizedData = {} 
 
-	for key, defaultValue in DEFAULT_PLAYER_STATISTICS do
+	for key, defaultValue in pairs(DEFAULT_PLAYER_STATISTICS) do
 		local value = data[key]
 		if ValidationUtils.isValidNumber(value) and value >= 0 then
 			sanitizedData[key] = value
@@ -56,7 +54,12 @@ local function validateAndSanitizeStatisticsData(data)
 	return sanitizedData
 end
 
-function DataStore.savePlayerStatistics(playerUserId, playerStatisticsData)
+--[[
+	Saves player statistics to the DataStore using UpdateAsync.
+	Merges with existing data, taking the maximum value for each statistic.
+	Returns true on success, false on failure.
+]]
+function DataStore.savePlayerStatistics(playerUserId: string, playerStatisticsData: PlayerStatistics): boolean
 	local success, result = DataStores.PlayerStats:updateAsync(
 		playerUserId,
 		function(oldData)
@@ -67,7 +70,7 @@ function DataStore.savePlayerStatistics(playerUserId, playerStatisticsData)
 
 			local existingData = validateAndSanitizeStatisticsData(oldData)
 
-			for key, newValue in playerStatisticsData do
+			for key, newValue in pairs(playerStatisticsData) do
 				if key ~= "processedReceipts" and ValidationUtils.isValidNumber(newValue) and newValue >= 0 then
 
 					existingData[key] = math.max(existingData[key] or 0, newValue)
@@ -86,7 +89,11 @@ function DataStore.savePlayerStatistics(playerUserId, playerStatisticsData)
 	return true
 end
 
-function DataStore.loadPlayerStatistics(playerUserId)
+--[[
+	Loads player statistics from the DataStore.
+	Returns sanitized data, or defaults if not found.
+]]
+function DataStore.loadPlayerStatistics(playerUserId: string): PlayerStatistics
 	local success, result = DataStores.PlayerStats:getAsync(playerUserId)
 
 	local sanitizedData
@@ -99,7 +106,12 @@ function DataStore.loadPlayerStatistics(playerUserId)
 	return sanitizedData
 end
 
-function DataStore.processReceiptAndIncrementStatistic(playerUserId, purchaseId, statisticName, incrementAmount)
+--[[
+	Processes a purchase receipt and increments a statistic atomically.
+	Ensures idempotency by tracking processed receipt IDs.
+	Returns (success, newValue, result) where result indicates the outcome.
+]]
+function DataStore.processReceiptAndIncrementStatistic(playerUserId: string | number, purchaseId: string, statisticName: string, incrementAmount: number): (boolean, number?, ProcessResult)
 	if not ValidationUtils.isValidUserId(tonumber(playerUserId)) then
 		warn(`[{script.Name}] Invalid player user ID for receipt processing: {tostring(playerUserId)}`)
 		return false, nil, "invalid_params"
@@ -154,9 +166,5 @@ function DataStore.processReceiptAndIncrementStatistic(playerUserId, purchaseId,
 
 	return true, newStatValue, "newly_processed"
 end
-
--------------------
--- Return Module --
--------------------
 
 return DataStore

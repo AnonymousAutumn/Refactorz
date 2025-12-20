@@ -1,26 +1,20 @@
------------------
--- Init Module --
------------------
+--[[
+	DataStoreWrapper - Wrapper for Roblox DataStore with retry logic and queue management.
+
+	Features:
+	- Exponential backoff retry on failure
+	- Per-key thread queuing to prevent race conditions
+	- Support for both regular and ordered DataStores
+	- Configurable retry parameters
+]]
 
 local DataStoreWrapper = {}
 DataStoreWrapper.__index = DataStoreWrapper
 
---------------
--- Services --
---------------
-
 local DataStoreService = game:GetService("DataStoreService")
-
-----------------
--- References --
-----------------
 
 local retryAsync = require(script.retryAsync)
 local ThreadQueue = require(script.ThreadQueue)
-
----------------
--- Constants --
----------------
 
 local RETRY_CONSTANT_SECONDS = 1
 local RETRY_EXPONENT_SECONDS = 2
@@ -29,11 +23,13 @@ local MAX_ATTEMPTS = 3
 local dataStoreOptions = Instance.new("DataStoreOptions")
 dataStoreOptions:SetExperimentalFeatures({ v2 = true })
 
----------------
--- Functions --
----------------
+type RetryHandler = (attemptNumber: number, errorMessage: string) -> boolean
+type TransformFunction = (oldValue: any) -> any
 
-function DataStoreWrapper.new(name, maxAttempts, retryConstant, retryExponent, isOrdered)
+--[[
+	Creates a new DataStoreWrapper instance.
+]]
+function DataStoreWrapper.new(name: string, maxAttempts: number?, retryConstant: number?, retryExponent: number?, isOrdered: boolean?)
 	local self = {
 		_name = name,
 		_maxAttempts = maxAttempts or MAX_ATTEMPTS,
@@ -49,7 +45,7 @@ function DataStoreWrapper.new(name, maxAttempts, retryConstant, retryExponent, i
 	return self
 end
 
-function DataStoreWrapper._attemptAsync(self, key, operation, optionalRetryFunctionHandler)
+function DataStoreWrapper._attemptAsync(self, key: string, operation: (dataStore: DataStore) -> any, optionalRetryFunctionHandler: RetryHandler?)
 	local queue = self._keyQueues[key]
 
 	if not queue then
@@ -70,7 +66,7 @@ function DataStoreWrapper._attemptAsync(self, key, operation, optionalRetryFunct
 	return table.unpack(queueReturnValues)
 end
 
-function DataStoreWrapper._onQueuePop(self, operation, optionalRetryFunctionHandler)
+function DataStoreWrapper._onQueuePop(self, operation: (dataStore: DataStore) -> any, optionalRetryFunctionHandler: RetryHandler?)
 	local attemptReturnValues = {
 		retryAsync(function()
 			local dataStore = self:getDataStore()
@@ -88,37 +84,56 @@ function DataStoreWrapper._onQueuePop(self, operation, optionalRetryFunctionHand
 	return table.unpack(attemptReturnValues)
 end
 
-function DataStoreWrapper.getAsync(self, key, optionalRetryFunctionHandler)
+--[[
+	Retrieves a value from the DataStore by key.
+]]
+function DataStoreWrapper.getAsync(self, key: string, optionalRetryFunctionHandler: RetryHandler?): any
 	return self:_attemptAsync(key, function(dataStore)
 		return dataStore:GetAsync(key)
 	end, optionalRetryFunctionHandler)
 end
 
-function DataStoreWrapper.setAsync(self, key, value, userIds, options, optionalRetryFunctionHandler)
+--[[
+	Sets a value in the DataStore by key.
+]]
+function DataStoreWrapper.setAsync(self, key: string, value: any, userIds: {number}?, options: DataStoreSetOptions?, optionalRetryFunctionHandler: RetryHandler?)
 	return self:_attemptAsync(key, function(dataStore)
 		return dataStore:SetAsync(key, value, userIds, options)
 	end, optionalRetryFunctionHandler)
 end
 
-function DataStoreWrapper.removeAsync(self, key, optionalRetryFunctionHandler)
+--[[
+	Removes a key from the DataStore.
+]]
+function DataStoreWrapper.removeAsync(self, key: string, optionalRetryFunctionHandler: RetryHandler?)
 	return self:_attemptAsync(key, function(dataStore)
 		return dataStore:RemoveAsync(key)
 	end, optionalRetryFunctionHandler)
 end
 
-function DataStoreWrapper.updateAsync(self, key, transformFunction, optionalRetryFunctionHandler)
+--[[
+	Updates a value in the DataStore using a transform function.
+]]
+function DataStoreWrapper.updateAsync(self, key: string, transformFunction: TransformFunction, optionalRetryFunctionHandler: RetryHandler?)
 	return self:_attemptAsync(key, function(dataStore)
 		return dataStore:UpdateAsync(key, transformFunction)
 	end, optionalRetryFunctionHandler)
 end
 
-function DataStoreWrapper.incrementAsync(self, key, delta, optionalRetryFunctionHandler)
+--[[
+	Increments a numeric value in the DataStore by delta.
+]]
+function DataStoreWrapper.incrementAsync(self, key: string, delta: number, optionalRetryFunctionHandler: RetryHandler?)
 	return self:_attemptAsync(key, function(dataStore)
 		return dataStore:IncrementAsync(key, delta)
 	end, optionalRetryFunctionHandler)
 end
 
-function DataStoreWrapper.getSortedAsync(self, ascending, pageSize, minValue, maxValue, optionalRetryFunctionHandler)
+--[[
+	Retrieves sorted data from an OrderedDataStore.
+	Only works when isOrdered = true.
+]]
+function DataStoreWrapper.getSortedAsync(self, ascending: boolean, pageSize: number, minValue: number?, maxValue: number?, optionalRetryFunctionHandler: RetryHandler?): DataStorePages
 	if not self._isOrdered then
 		return false, "getSortedAsync requires an OrderedDataStore (isOrdered = true)"
 	end
@@ -156,7 +171,10 @@ function DataStoreWrapper.getSortedAsync(self, ascending, pageSize, minValue, ma
 	return table.unpack(queueReturnValues)
 end
 
-function DataStoreWrapper.getDataStore(self)
+--[[
+	Returns the underlying DataStore instance (lazy-loaded).
+]]
+function DataStoreWrapper.getDataStore(self): DataStore
 	if self._isOrdered then
 		return self:getOrderedDataStore()
 	end
@@ -168,7 +186,10 @@ function DataStoreWrapper.getDataStore(self)
 	return self._dataStore
 end
 
-function DataStoreWrapper.getOrderedDataStore(self)
+--[[
+	Returns the underlying OrderedDataStore instance (lazy-loaded).
+]]
+function DataStoreWrapper.getOrderedDataStore(self): OrderedDataStore
 	if not self._orderedDataStore then
 		self._orderedDataStore = DataStoreService:GetOrderedDataStore(self._name)
 	end
@@ -176,7 +197,10 @@ function DataStoreWrapper.getOrderedDataStore(self)
 	return self._orderedDataStore
 end
 
-function DataStoreWrapper.getQueueLength(self, key)
+--[[
+	Returns the number of pending operations for a specific key.
+]]
+function DataStoreWrapper.getQueueLength(self, key: string): number
 	local length = 0
 	local threadQueue = self._keyQueues[key]
 
@@ -187,7 +211,10 @@ function DataStoreWrapper.getQueueLength(self, key)
 	return length
 end
 
-function DataStoreWrapper.areAllQueuesEmpty(self)
+--[[
+	Returns true if all operation queues are empty.
+]]
+function DataStoreWrapper.areAllQueuesEmpty(self): boolean
 	for _, threadQueue in pairs(self._keyQueues) do
 		if threadQueue:getLength() > 0 then
 			return false
@@ -197,14 +224,13 @@ function DataStoreWrapper.areAllQueuesEmpty(self)
 	return true
 end
 
+--[[
+	Skips all queued operations except the last one for each key.
+]]
 function DataStoreWrapper.skipAllQueuesToLastEnqueued(self)
 	for _, threadQueue in pairs(self._keyQueues) do
 		threadQueue:skipToLastEnqueued()
 	end
 end
 
--------------------
--- Return Module --
--------------------
-
-return DataStoreWrapper	
+return DataStoreWrapper

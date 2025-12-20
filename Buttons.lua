@@ -1,42 +1,45 @@
------------------
--- Init Module --
------------------
+--[[
+	UIButtonHandler - Handles UI button interactions.
+
+	Features:
+	- Touch and mouse input support
+	- Sound effects
+	- Button setup utilities
+]]
 
 local UIButtonHandler = {}
 
----------------
--- Variables --
----------------
-
 local isUserOnTouchDevice = false
 
----------------
--- Functions --
----------------
-
-local function playSound(sound)
+local function playSound(sound: Sound?)
 	if sound and sound:IsA("Sound") then
 		sound:Play()
 	end
 end
 
-local function getPrimaryInteractionSignal(button)
+local function getPrimaryInteractionSignal(button: TextButton): RBXScriptSignal
 	return if isUserOnTouchDevice then button.TouchTap else button.MouseButton1Down
 end
 
-local function trackConnection(connection, tracker)
+local function trackConnection(connection: RBXScriptConnection, tracker: any)
 	if tracker and tracker.track then
 		tracker:track(connection)
 	end
 end
 
-function UIButtonHandler.initialize(inputCategorizer)
+--[[
+	Initializes the button handler with input categorizer.
+]]
+function UIButtonHandler.initialize(inputCategorizer: any)
 	if inputCategorizer then
 		isUserOnTouchDevice = inputCategorizer.getLastInputCategory() == "Touch"
 	end
 end
 
-function UIButtonHandler.setupButton(config)
+--[[
+	Sets up a single button with click and hover handling.
+]]
+function UIButtonHandler.setupButton(config: any)
 	local button = config.button
 	if not button or not button:IsA("TextButton") then
 		return
@@ -59,7 +62,10 @@ function UIButtonHandler.setupButton(config)
 	end
 end
 
-function UIButtonHandler.setupButtons(buttons, onClick, sounds, connectionTracker)
+--[[
+	Sets up multiple buttons with the same handlers.
+]]
+function UIButtonHandler.setupButtons(buttons: { TextButton }, onClick: (TextButton) -> (), sounds: any?, connectionTracker: any?)
 	for _, button in buttons do
 		UIButtonHandler.setupButton({
 			button = button,
@@ -70,7 +76,10 @@ function UIButtonHandler.setupButtons(buttons, onClick, sounds, connectionTracke
 	end
 end
 
-function UIButtonHandler.setupAllButtons(container, onClick, sounds, connectionTracker, watchForNew)
+--[[
+	Sets up all TextButtons in a container.
+]]
+function UIButtonHandler.setupAllButtons(container: Instance, onClick: (TextButton) -> (), sounds: any?, connectionTracker: any?, watchForNew: boolean?)
 	for _, descendant in container:GetDescendants() do
 		if descendant:IsA("TextButton") then
 			UIButtonHandler.setupButton({
@@ -97,16 +106,18 @@ function UIButtonHandler.setupAllButtons(container, onClick, sounds, connectionT
 	end
 end
 
-function UIButtonHandler.isOnTouchDevice()
+--[[
+	Returns whether the user is on a touch device.
+]]
+function UIButtonHandler.isOnTouchDevice(): boolean
 	return isUserOnTouchDevice
 end
 
-function UIButtonHandler.getPrimarySignal(button)
+--[[
+	Gets the primary interaction signal for a button.
+]]
+function UIButtonHandler.getPrimarySignal(button: TextButton): RBXScriptSignal
 	return getPrimaryInteractionSignal(button)
 end
-
--------------------
--- Return Module --
--------------------
 
 return UIButtonHandler

@@ -1,24 +1,20 @@
------------------
--- Init Module --
------------------
+--[[
+	TextToSpeech - Text-to-speech audio playback.
+
+	Features:
+	- TTS instance creation
+	- Audio playback with cleanup
+]]
 
 local TextToSpeech = {}
 TextToSpeech.DefaultVoiceId = "1"
 TextToSpeech.DefaultPitch = 1.0
 TextToSpeech.DefaultVolume = 1.0
 
---------------
--- Services --
---------------
-
 local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
 
----------------
--- Functions --
----------------
-
-function TextToSpeech._createTTSInstance(text, voiceId, pitch, volume)
+function TextToSpeech._createTTSInstance(text: string, voiceId: string, pitch: number, volume: number): (any, AudioDeviceOutput, Wire)
 	local ats = Instance.new("AudioTextToSpeech")
 	ats.Text = text
 	ats.VoiceId = voiceId
@@ -36,7 +32,10 @@ function TextToSpeech._createTTSInstance(text, voiceId, pitch, volume)
 	return ats, deviceOutput, wire
 end
 
-function TextToSpeech.Speak(text, opts)
+--[[
+	Speaks the given text using TTS.
+]]
+function TextToSpeech.Speak(text: string, opts: any?): RBXScriptConnection?
 	opts = opts or {}
 	local voiceId = opts.VoiceId or TextToSpeech.DefaultVoiceId
 	local pitch = opts.Pitch or TextToSpeech.DefaultPitch
@@ -72,9 +71,5 @@ function TextToSpeech.Speak(text, opts)
 
 	return connection
 end
-
--------------------
--- Return Module --
--------------------
 
 return TextToSpeech

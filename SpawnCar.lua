@@ -1,12 +1,13 @@
---------------
--- Services --
---------------
+--[[
+	SpawnCar - Spawns a car for a player.
+
+	Features:
+	- Car instantiation
+	- Random color assignment
+	- Owner attribution
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local instancesFolder = ReplicatedStorage.Instances
 local objectsFolder = instancesFolder.Objects
@@ -16,17 +17,12 @@ local CarConstants = require(carTemplate.Scripts.Constants)
 local randomColor = require(script.Parent.randomColor)
 local recolorModel = require(script.Parent.recolorModel)
 
----------------
--- Constants --
----------------
-
 local SPAWN_OFFSET = CFrame.new(0, 20, -10)
 
----------------
--- Functions --
----------------
-
-local function spawnCar(owner, hrp)
+--[[
+	Spawns a car for the given owner.
+]]
+local function spawnCar(owner: Player, hrp: BasePart)
 	if not owner or not hrp then
 		return
 	end
@@ -42,9 +38,5 @@ local function spawnCar(owner, hrp)
 
 	car.Parent = workspace.Debris
 end
-
--------------------
--- Return Module --
--------------------
 
 return spawnCar

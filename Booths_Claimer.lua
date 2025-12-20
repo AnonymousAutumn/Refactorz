@@ -1,20 +1,17 @@
------------------
--- Init Module --
------------------
+--[[
+	StandModule - Manages booth claiming and ownership.
+
+	Features:
+	- Booth claiming
+	- Player positioning
+	- Display population
+]]
 
 local StandModule = {}
 StandModule.__index = StandModule
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -25,11 +22,10 @@ local GamepassCacheManager = require(modulesFolder.Caches.PassCache)
 local FormatString = require(modulesFolder.Utilities.FormatString)
 local Connections = require(modulesFolder.Wrappers.Connections)
 
----------------
--- Functions --
----------------
-
-function StandModule.new(stand, claimFunc, refreshEvent, claimedStands)
+--[[
+	Creates a new StandModule instance.
+]]
+function StandModule.new(stand: Model, claimFunc: (Player, any) -> (), refreshEvent: RemoteEvent, claimedStands: { [Model]: any })
 	local self = setmetatable({}, StandModule)
 	self.Stand = stand
 	self.Positioner = stand.Positioner
@@ -123,9 +119,5 @@ function StandModule:Reset()
 
 	self.connectionsMaid:disconnect()
 end
-
--------------------
--- Return Module --
--------------------
 
 return StandModule

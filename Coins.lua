@@ -1,28 +1,23 @@
------------------
--- Init Module --
------------------
+--[[
+	CoinsModule - Spawns visual coin effects.
+
+	Features:
+	- Coin spawning from player
+	- Coin spawning from part
+]]
 
 local CoinsModule = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
 local createCoinsEvent = remoteEvents.CreateCoins
 
----------------
--- Functions --
----------------
-
-function CoinsModule.SpawnCoins(donor, receiver, amount)
+--[[
+	Spawns coins from a donor player to a receiver.
+]]
+function CoinsModule.SpawnCoins(donor: Player, receiver: Player, amount: number)
 	local donorChar = donor.Character
 	local donorRoot = donorChar and donorChar.PrimaryPart
 	if not donorRoot then return end
@@ -38,7 +33,10 @@ function CoinsModule.SpawnCoins(donor, receiver, amount)
 	end
 end
 
-function CoinsModule.SpawnCoinsFromPart(part, receiver, amount)
+--[[
+	Spawns coins from a part to a receiver.
+]]
+function CoinsModule.SpawnCoinsFromPart(part: BasePart, receiver: Player, amount: number)
 	if not part then return end
 
 	local spawnDelay = math.min(amount * 0.05, 0.5) / math.max(amount, 1)
@@ -51,9 +49,5 @@ function CoinsModule.SpawnCoinsFromPart(part, receiver, amount)
 		})
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return CoinsModule

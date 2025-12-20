@@ -1,13 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	Connect4GameBoard - Manages Connect4 game logic.
+
+	Features:
+	- Game state management
+	- Token dropping
+	- Win/draw detection
+	- Player queue handling
+]]
 
 local Connect4GameBoard = {}
 Connect4GameBoard.__index = Connect4GameBoard
-
---------------
--- Services --
---------------
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -29,10 +31,6 @@ local PlayerNotifications = require(script.PlayerNotifications)
 local CameraController = require(script.CameraController)
 local GameTiming = require(script.GameTiming)
 
----------------
--- Constants --
----------------
-
 local ROWS = 5
 local COLUMNS = 8
 local MAX_PLAYER_DISTANCE = 15
@@ -40,11 +38,7 @@ local DISTANCE_CHECK_INTERVAL = 0.5
 local PLAYER_CAPACITY = 2
 local TOKEN_HEIGHT = 0.9
 
----------------
--- Functions --
----------------
-
-local function updateWinsDataStore(playerId, increment)
+local function updateWinsDataStore(playerId: number, increment: number): number
 	local success, result = DataStores.Wins:incrementAsync(tostring(playerId), increment)
 
 	if not success then
@@ -55,12 +49,15 @@ local function updateWinsDataStore(playerId, increment)
 	return result or 0
 end
 
-local function recordPlayerWin(playerUserId, wins)
+local function recordPlayerWin(playerUserId: number, wins: number)
 	updateWinsDataStore(playerUserId, wins)
 	PlayerData:IncrementPlayerStatistic(playerUserId, "Wins", wins)
 end
 
-function Connect4GameBoard.new(boardModel)
+--[[
+	Creates a new Connect4GameBoard instance.
+]]
+function Connect4GameBoard.new(boardModel: Model)
 	local self = setmetatable({}, Connect4GameBoard) 
 
 	self.boardModel = boardModel
@@ -404,9 +401,5 @@ function Connect4GameBoard:_continueGame()
 		self.isTokenCurrentlyDropping = false
 	end)
 end
-
--------------------
--- Return Module --
--------------------
 
 return Connect4GameBoard

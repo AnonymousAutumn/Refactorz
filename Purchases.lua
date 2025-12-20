@@ -1,27 +1,20 @@
------------------
--- Init Module --
------------------
+--[[
+	GamePassPurchaseHandler - Handles gamepass purchase flow.
+
+	Features:
+	- Purchase validation
+	- Error handling
+	- Sound effects
+]]
 
 local GamePassPurchaseHandler = {}
-
---------------
--- Services --
---------------
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local DEFAULT_PURCHASE_COOLDOWN_SECONDS = 1
 
@@ -44,35 +37,27 @@ local ERROR_MESSAGES = {
 	INVALID_ASSET = "Invalid gamepass",
 }
 
----------------
--- Variables --
----------------
-
 local isPurchaseCurrentlyProcessing = false
 
----------------
--- Functions --
----------------
-
-local function calculateRetryDelay(attemptNumber)
+local function calculateRetryDelay(attemptNumber: number): number
 	return BASE_RETRY_DELAY * attemptNumber
 end
 
-local function resetPurchaseProcessingState(cooldownSeconds)
+local function resetPurchaseProcessingState(cooldownSeconds: number)
 	task.delay(cooldownSeconds, function()
 		isPurchaseCurrentlyProcessing = false
 	end)
 end
 
-local function arePromptsDisabled(player)
+local function arePromptsDisabled(player: Player): boolean
 	return player:GetAttribute("PromptsDisabled") == true
 end
 
-local function isValidGamePassAssetId(assetId)
+local function isValidGamePassAssetId(assetId: number): boolean
 	return ValidationUtils.isValidNumber(assetId) and assetId > 0
 end
 
-local function isPlayerGamePassCreator(player, assetId)
+local function isPlayerGamePassCreator(player: Player, assetId: number): (boolean, boolean)
 	local success, result = pcall(function()
 		local productInfo = MarketplaceService:GetProductInfo(assetId, Enum.InfoType.GamePass)
 		
@@ -86,7 +71,7 @@ local function isPlayerGamePassCreator(player, assetId)
 	return false, false
 end
 
-local function doesPlayerOwnGamePass(player, assetId)
+local function doesPlayerOwnGamePass(player: Player, assetId: number): (boolean, boolean)
 	local success, ownsPass = pcall(function()
 		return MarketplaceService:UserOwnsGamePassAsync(player.UserId, assetId)
 	end)
@@ -104,7 +89,7 @@ local function doesPlayerOwnGamePass(player, assetId)
 	return success, false
 end
 
-local function fetchGamepassProductInfo(gamepassAssetId)
+local function fetchGamepassProductInfo(gamepassAssetId: number): any?
 	for attempt = 1, MAX_DATASTORE_RETRIES do
 		local success, result = pcall(function()
 			return MarketplaceService:GetProductInfo(gamepassAssetId, Enum.InfoType.GamePass)
@@ -124,13 +109,16 @@ local function fetchGamepassProductInfo(gamepassAssetId)
 	return nil
 end
 
-local function playSound(sound)
+local function playSound(sound: Sound?)
 	if sound and sound:IsA("Sound") then
 		sound:Play()
 	end
 end
 
-function GamePassPurchaseHandler.attemptPurchase(config)
+--[[
+	Attempts to purchase a gamepass.
+]]
+function GamePassPurchaseHandler.attemptPurchase(config: any): any
 	if isPurchaseCurrentlyProcessing then
 		return {
 			success = false,
@@ -210,19 +198,31 @@ function GamePassPurchaseHandler.attemptPurchase(config)
 	}
 end
 
-function GamePassPurchaseHandler.arePromptsDisabled(player)
+--[[
+	Checks if prompts are disabled for a player.
+]]
+function GamePassPurchaseHandler.arePromptsDisabled(player: Player): boolean
 	return arePromptsDisabled(player)
 end
 
-function GamePassPurchaseHandler.isProcessing()
+--[[
+	Checks if a purchase is currently processing.
+]]
+function GamePassPurchaseHandler.isProcessing(): boolean
 	return isPurchaseCurrentlyProcessing
 end
 
-function GamePassPurchaseHandler.isValidAssetId(assetId)
+--[[
+	Checks if an asset ID is valid.
+]]
+function GamePassPurchaseHandler.isValidAssetId(assetId: number): boolean
 	return isValidGamePassAssetId(assetId)
 end
 
-function GamePassPurchaseHandler.getErrorMessage(errorType)
+--[[
+	Gets the error message for a given error type.
+]]
+function GamePassPurchaseHandler.getErrorMessage(errorType: string): string?
 	if errorType == PURCHASE_ERROR_TYPES.IS_CREATOR then
 		return ERROR_MESSAGES.CANNOT_PURCHASE_CREATED
 	elseif errorType == PURCHASE_ERROR_TYPES.ALREADY_OWNED then
@@ -235,16 +235,8 @@ function GamePassPurchaseHandler.getErrorMessage(errorType)
 	return nil
 end
 
----------------------------
--- Expose Module Methods --
----------------------------
-
 GamePassPurchaseHandler.doesPlayerOwnPass = doesPlayerOwnGamePass
 GamePassPurchaseHandler.isPlayerCreator = isPlayerGamePassCreator
 GamePassPurchaseHandler.fetchPassInfo = fetchGamepassProductInfo
-
--------------------
--- Return Module --
--------------------
 
 return GamePassPurchaseHandler

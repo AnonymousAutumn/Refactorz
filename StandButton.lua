@@ -1,13 +1,7 @@
---------------
--- Services --
---------------
+--[[ StandButton - Handles stand claim button UI interaction ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -21,10 +15,6 @@ local configurationFolder = ReplicatedStorage.Configuration
 
 local PurchasesWrapper = require(modulesFolder.Wrappers.Purchases)
 local gameConfig = require(configurationFolder.GameConfig)
-
----------------
--- Functions --
----------------
 
 local function initialize()
 	local topbarUI = playerGui:WaitForChild("TopbarUI")
@@ -41,9 +31,5 @@ local function initialize()
 		toggleStandClaimRemoteEvent:FireServer()
 	end)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

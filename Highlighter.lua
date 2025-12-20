@@ -1,13 +1,7 @@
---------------
--- Services --
---------------
+--[[ Highlighter - Creates and manages player character highlights ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 
@@ -18,10 +12,6 @@ local createHighlightEvent = remoteEvents.CreateHighlight
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
 
----------------
--- Constants --
----------------
-
 local HIGHLIGHT_CONFIG = {
 	instanceName = "PlayerHighlight",
 	fillTransparency = 1,
@@ -29,16 +19,8 @@ local HIGHLIGHT_CONFIG = {
 	depthMode = Enum.HighlightDepthMode.AlwaysOnTop,
 }
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 local activeHighlight = nil
-
----------------
--- Functions --
----------------
 
 local function removeActiveHighlight()
 	if activeHighlight then
@@ -47,7 +29,7 @@ local function removeActiveHighlight()
 	end
 end
 
-local function createHighlight(targetCharacter)
+local function createHighlight(targetCharacter: Model): Highlight?
 	if not targetCharacter or not targetCharacter.Parent then
 		return nil
 	end
@@ -63,7 +45,7 @@ local function createHighlight(targetCharacter)
 	return highlight
 end
 
-local function resolveTargetPlayer(arg)
+local function resolveTargetPlayer(arg: any): Player?
 
 	if typeof(arg) == "Instance" and arg:IsA("Player") then
 		return arg
@@ -75,7 +57,7 @@ local function resolveTargetPlayer(arg)
 	return nil
 end
 
-local function onHighlightRequest(targetRef)
+local function onHighlightRequest(targetRef: any)
 
 	removeActiveHighlight()
 
@@ -96,7 +78,7 @@ local function onHighlightRequest(targetRef)
 	activeHighlight = createHighlight(targetCharacter)
 end
 
-local function onCharacterAdded(character)
+local function onCharacterAdded(character: Model)
 
 	removeActiveHighlight()
 end
@@ -105,7 +87,7 @@ local function onLocalPlayerDied()
 	removeActiveHighlight()
 end
 
-local function setupCharacterEvents(character)
+local function setupCharacterEvents(character: Model)
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if humanoid then
 		connectionsMaid:add(humanoid.Died:Connect(onLocalPlayerDied))
@@ -136,9 +118,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

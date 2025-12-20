@@ -1,3 +1,5 @@
+--[[ UIController_TextController - Animated loading text controller ]]
+
 local RunService = game:GetService("RunService")
 
 local AnimText = {}
@@ -12,11 +14,11 @@ local DOT_FORMAT = '<font transparency="%.2f"> .</font>'
 local BASE_LOADING_TEXT = "LOADING"
 local COMPLETION_MESSAGE = "??"
 
-local function updateText (textLabel, text)
+local function updateText(textLabel: TextLabel, text: string)
 	textLabel.Text = text
 end
 
-function AnimText.new(headerText, subText)
+function AnimText.new(headerText: TextLabel, subText: TextLabel)
 	local self = setmetatable({}, AnimText)
 
 	self.headerText = headerText
@@ -51,11 +53,7 @@ function AnimText:_render()
 end
 
 
----------------------------------------------------------------------
--- Animation Steps
----------------------------------------------------------------------
-
-function AnimText:_fadeDot(index, fadeIn)
+function AnimText:_fadeDot(index: number, fadeIn: boolean): boolean
 	local start = os.clock()
 
 	while true do
@@ -83,7 +81,7 @@ function AnimText:_fadeDot(index, fadeIn)
 	return true
 end
 
-function AnimText:_cycle()
+function AnimText:_cycle(): boolean
 	-- reset
 	for i = 1, MAX_DOTS do
 		self._opacities[i] = 1

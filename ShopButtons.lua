@@ -1,14 +1,8 @@
---------------
--- Services --
---------------
+--[[ ShopButtons - Handles shop purchase button interactions ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 
@@ -24,11 +18,7 @@ local NotificationHelper = require(modulesFolder.Utilities.NotificationHelper)
 local uiSoundGroup = SoundService.UI
 local feedbackSoundGroup = SoundService.Feedback
 
----------------
--- Functions --
----------------
-
-local function handleProductPurchaseButtonInteraction(button)
+local function handleProductPurchaseButtonInteraction(button: GuiButton)
 	local assetId = button:GetAttribute("AssetId")
 
 	PurchaseWrapper.attemptPurchase({
@@ -45,7 +35,7 @@ local function handleProductPurchaseButtonInteraction(button)
 	})
 end
 
-local function handleGamePassPurchaseButtonInteraction(button)
+local function handleGamePassPurchaseButtonInteraction(button: GuiButton)
 	local assetId = button:GetAttribute("AssetId")
 
 	PurchaseWrapper.attemptPurchase({
@@ -61,7 +51,7 @@ local function handleGamePassPurchaseButtonInteraction(button)
 	})
 end
 
-local function setupProductButtonInteractionHandlers(gamePassButton)
+local function setupProductButtonInteractionHandlers(gamePassButton: GuiButton)
 	ButtonWrapper.setupButton({
 		button = gamePassButton,
 		onClick = handleProductPurchaseButtonInteraction,
@@ -71,7 +61,7 @@ local function setupProductButtonInteractionHandlers(gamePassButton)
 	})
 end
 
-local function setupGamePassButtonInteractionHandlers(gamePassButton)
+local function setupGamePassButtonInteractionHandlers(gamePassButton: GuiButton)
 	ButtonWrapper.setupButton({
 		button = gamePassButton,
 		onClick = handleGamePassPurchaseButtonInteraction,
@@ -98,9 +88,5 @@ local function initialize()
 		end
 	end
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

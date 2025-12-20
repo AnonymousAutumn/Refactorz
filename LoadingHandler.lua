@@ -1,6 +1,4 @@
---------------
--- Services --
---------------
+--[[ LoadingHandler - Manages the loading screen and asset preloading ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
@@ -11,10 +9,6 @@ local Players = game:GetService("Players")
 
 local WaitForGameLoadedAsync = require(script.Parent.waitForGameLoadedAsync)
 WaitForGameLoadedAsync()
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local dataLoadedRemoteEvent = networkFolder.Signals.DataLoaded
@@ -32,10 +26,6 @@ local mainFrame = loadingScreenInstance.MainFrame
 local backgroundImageLabel = mainFrame.Background
 local headerTextLabel = mainFrame.HeaderText
 local subTextLabel = mainFrame.SubText
-
----------------
--- Constants --
----------------
 
 local ASSETS_TO_PRELOAD = {
 	{"Image", "rbxassetid://121480522"},
@@ -73,15 +63,7 @@ local STATUS_MESSAGES = {
 local COMPLETION_DELAY = 1.5
 local DELAY_ASSET_LOAD_TIME = 3.5
 
----------------
--- Variables --
----------------
-
 local isLoadingComplete = false
-
----------------
--- Functions --
----------------
 
 local function preloadAssets()
 	local assets = {}
@@ -135,7 +117,7 @@ local function beginLoading()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 end
 
-local function finishLoading(uiControllerInstance)
+local function finishLoading(uiControllerInstance: any)
 	if isLoadingComplete then return end
 	isLoadingComplete = true
 
@@ -156,7 +138,7 @@ local function finishLoading(uiControllerInstance)
 	end)
 end
 
-local function executeLoadingSequence(uiControllerInstance)
+local function executeLoadingSequence(uiControllerInstance: any)
 	if isLoadingComplete then return end
 
 	updateTextLabels(STATUS_MESSAGES.LOADING_GAME)

@@ -1,19 +1,9 @@
-----------------
--- References --
-----------------
+--[[ Connect4 - Initializes and manages Connect4 game boards ]]
 
 local connect4BoardsFolder = workspace.Connect4Boards
 local GameController = require(script.GameController)
 
----------------
--- Variables --
----------------
-
 local activeBoardControllers = {}
-
----------------
--- Functions --
----------------
 
 local function setupConnect4GameBoards()
 	local boardModelCollection = connect4BoardsFolder:GetChildren()
@@ -37,9 +27,5 @@ end
 local function initialize()
 	activeBoardControllers = setupConnect4GameBoards()
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

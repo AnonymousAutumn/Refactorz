@@ -1,14 +1,8 @@
---------------
--- Services --
---------------
+--[[ Sounds - Manages game sound playback ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 
@@ -23,22 +17,14 @@ local feedbackGroup = SoundService.Feedback
 local defeatSound = feedbackGroup.Defeat
 local victorySound = feedbackGroup.Victory
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 
----------------
--- Functions --
----------------
-
-local function getSoundForOutcome(playerWasDefeated)
+local function getSoundForOutcome(playerWasDefeated: boolean): Sound?
 	local soundCandidate = if playerWasDefeated then defeatSound else victorySound
 	return if soundCandidate:IsA("Sound") then soundCandidate else nil
 end
 
-local function handleSoundRequest(playerWasDefeated)
+local function handleSoundRequest(playerWasDefeated: boolean)
 	if typeof(playerWasDefeated) ~= "boolean" then
 		return
 	end
@@ -62,9 +48,5 @@ local function initialize()
 		)
 	end
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

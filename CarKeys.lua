@@ -1,13 +1,7 @@
---------------
--- Services --
---------------
+--[[ CarKeys - Tool script for spawning player vehicles with cooldown management ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local utilitiesFolder = modulesFolder.Utilities
@@ -17,21 +11,9 @@ local DestroyPlayerCars = require(utilitiesFolder.Vehicle.DestroyPlayerCars)
 local carKeysTool = script.Parent
 local useSound = carKeysTool.UseSound
 
----------------
--- Constants --
----------------
-
 local TOOL_COOLDOWN = 5
 
---------------------
--- Cooldown State --
---------------------
-
 local lastUseTime = 0
-
----------------
--- Functions --
----------------
 
 local function spawnVehicle()
 	-- Cooldown check
@@ -61,9 +43,5 @@ local function spawnVehicle()
 	DestroyPlayerCars(player)
 	SpawnCar(player, hrp)
 end
-
---------------------
--- Initialization --
---------------------
 
 carKeysTool.Activated:Connect(spawnVehicle)

@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	Camera - Client-side camera control for Connect4.
+
+	Features:
+	- Camera focus on game board
+	- Camera state saving/restoring
+	- Tween-based transitions
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local currentCamera = workspace.CurrentCamera
@@ -21,25 +22,13 @@ local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
 local TweenHelper = require(modulesFolder.Utilities.TweenHelper)
 
----------------
--- Constants --
----------------
-
 local CAMERA_TWEEN_INFO = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
----------------
--- Variables --
----------------
 
 local connectionsMaid = Connections.new()
 
 local savedCameraType = nil
 local savedCameraFrame = nil
 local currentTween = nil
-
----------------
--- Functions --
----------------
 
 local function cancelCurrentTween()
 	if currentTween then
@@ -59,7 +48,7 @@ local function restoreCamera()
 	end
 end
 
-local function focusOnBoard(targetCFrame)
+local function focusOnBoard(targetCFrame: CFrame)
 	if not savedCameraType then
 		savedCameraType = currentCamera.CameraType
 		savedCameraFrame = currentCamera.CFrame
@@ -70,7 +59,7 @@ local function focusOnBoard(targetCFrame)
 	currentTween = TweenHelper.play(currentCamera, CAMERA_TWEEN_INFO, { CFrame = targetCFrame })
 end
 
-local function onCameraUpdate(isPlayerTurn, boardCFrame)
+local function onCameraUpdate(isPlayerTurn: boolean, boardCFrame: CFrame?)
 	if isPlayerTurn and boardCFrame then
 		focusOnBoard(boardCFrame)
 	else
@@ -93,9 +82,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

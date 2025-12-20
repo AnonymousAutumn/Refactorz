@@ -1,13 +1,7 @@
---------------
--- Services --
---------------
+--[[ CharacterVisibility - Manages character visibility and controls during gameplay ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
@@ -15,10 +9,6 @@ local Connections = require(modulesFolder.Wrappers.Connections)
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
 local updateGameUIEvent = remoteEvents.UpdateGameUI
-
----------------
--- Constants --
----------------
 
 local COMPLETELY_TRANSPARENT = 1
 local FULLY_OPAQUE = 0
@@ -37,10 +27,6 @@ local HIDEABLE_EFFECT_TYPES = {
 
 local YOUR_TURN_MESSAGE = "Your turn!"
 
----------------
--- Variables --
----------------
-
 local originalStates = {}
 
 local localPlayer = Players.LocalPlayer
@@ -48,11 +34,7 @@ local playerControls = nil
 
 local connectionsMaid = Connections.new()
 
----------------
--- Functions --
----------------
-
-local function setPropertySafely(instance, propertyName, value)
+local function setPropertySafely(instance: Instance, propertyName: string, value: any): boolean
 	local success, errorMessage = pcall(function()
 		(instance )[propertyName] = value
 	end)
@@ -62,11 +44,11 @@ local function setPropertySafely(instance, propertyName, value)
 	return success
 end
 
-local function isHideableEffect(instance)
+local function isHideableEffect(instance: Instance): boolean
 	return HIDEABLE_EFFECT_TYPES[instance.ClassName] == true
 end
 
-local function storeOriginalState(instance)
+local function storeOriginalState(instance: Instance)
 	if originalStates[instance] then
 		return
 	end
@@ -100,7 +82,7 @@ local function restoreAllStates()
 	table.clear(originalStates)
 end
 
-local function hideInstance(instance)
+local function hideInstance(instance: Instance)
 	storeOriginalState(instance)
 
 	if instance:IsA("BasePart") then
@@ -114,7 +96,7 @@ local function hideInstance(instance)
 	end
 end
 
-local function hideCharacter(character)
+local function hideCharacter(character: Model)
 	if not character then
 		return
 	end
@@ -131,11 +113,11 @@ local function hideCharacter(character)
 	end
 end
 
-local function showCharacter(_character)
+local function showCharacter(_character: Model)
 	restoreAllStates()
 end
 
-local function forEachPlayerCharacter(action)
+local function forEachPlayerCharacter(action: (Model) -> ())
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player.Character then
 			action(player.Character)
@@ -173,7 +155,7 @@ local function hidePlayersAndDisableControls()
 	disableControls()
 end
 
-local function onTurnUIUpdate(turnMessage, _turnTimeout, shouldReset)
+local function onTurnUIUpdate(turnMessage: string, _turnTimeout: number, shouldReset: boolean)
 	if shouldReset then
 		showPlayersAndEnableControls()
 	elseif turnMessage == YOUR_TURN_MESSAGE then
@@ -233,9 +215,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

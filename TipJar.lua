@@ -1,13 +1,7 @@
---------------
--- Services --
---------------
+--[[ TipJar - Manages tip jar tool interactions and UI toggling ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local bindableEvents = networkFolder.Bindables.Events
@@ -21,10 +15,6 @@ local tipJarTool  = script.Parent
 local tipJarHandle = tipJarTool.Handle
 local toolProximityPrompt = tipJarHandle.ProximityPrompt
 
----------------
--- Constants --
----------------
-
 local ATTRIBUTE_PROMPTS_DISABLED = "PromptsDisabled"
 local ATTRIBUTE_SHOULD_HIDE_UI = "ShouldHideUI"
 
@@ -32,21 +22,13 @@ local ENABLE_PROMPT_DEBOUNCE = true
 local DEBOUNCE_MODE = "player"
 local DEBOUNCE_DURATION_SEC = 1.25
 
----------------
--- Variables --
----------------
-
 local playerFromTool = nil
 local connectionsMaid = Connections.new()
 
 local playerCooldownUntil = {}
 local toolCooldownUntil = nil
 
----------------
--- Functions --
----------------
-
-local function triggerUserInterfaceToggle(uiViewingData)
+local function triggerUserInterfaceToggle(uiViewingData: any)
 	local success, errorMessage = pcall(function()
 		toggleUIBindableEvent:Fire(uiViewingData)
 	end)
@@ -55,7 +37,7 @@ local function triggerUserInterfaceToggle(uiViewingData)
 	end
 end
 
-local function getToolOwner()
+local function getToolOwner(): Player?
 	local parentInstance = tipJarTool.Parent
 	if not parentInstance then
 		return nil
@@ -63,11 +45,11 @@ local function getToolOwner()
 	return Players:GetPlayerFromCharacter(parentInstance)
 end
 
-local function now()
+local function now(): number
 	return os.clock()
 end
 
-local function isDebouncedForPlayer(player)
+local function isDebouncedForPlayer(player: Player): boolean
 	if not ENABLE_PROMPT_DEBOUNCE or DEBOUNCE_MODE ~= "player" then
 		return false
 	end
@@ -75,14 +57,14 @@ local function isDebouncedForPlayer(player)
 	return untilTime ~= nil and now() < untilTime
 end
 
-local function markPlayerDebounced(player)
+local function markPlayerDebounced(player: Player)
 	if not ENABLE_PROMPT_DEBOUNCE or DEBOUNCE_MODE ~= "player" then
 		return
 	end
 	playerCooldownUntil[player.UserId] = now() + DEBOUNCE_DURATION_SEC
 end
 
-local function isDebouncedForTool()
+local function isDebouncedForTool(): boolean
 	if not ENABLE_PROMPT_DEBOUNCE or DEBOUNCE_MODE ~= "tool" then
 		return false
 	end
@@ -127,7 +109,7 @@ local function handleToolUnequippedByPlayer()
 	currentToolOwnerPlayer = nil
 end
 
-local function unequipCurrentToolIfAny(triggeringPlayer)
+local function unequipCurrentToolIfAny(triggeringPlayer: Player)
 	local character = triggeringPlayer.Character or triggeringPlayer.CharacterAdded:Wait()
 	if not character then
 		return
@@ -143,7 +125,7 @@ local function unequipCurrentToolIfAny(triggeringPlayer)
 	end
 end
 
-local function handleProximityPromptTriggeredByPlayer(triggeringPlayer)
+local function handleProximityPromptTriggeredByPlayer(triggeringPlayer: Player)
 	if not ValidationUtils.isValidPlayer(triggeringPlayer) then
 		return
 	end
@@ -193,9 +175,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

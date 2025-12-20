@@ -1,14 +1,8 @@
---------------
--- Services --
---------------
+--[[ StandsContainer - Manages stand UI display and gamepass purchase interactions ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -39,19 +33,12 @@ local passButtonPrefab = instancesFolder.GuiPrefabs.PassButtonPrefab
 local uiSoundGroup = SoundService.UI
 local feedbackSoundGroup = SoundService.Feedback
 
----------------
--- Variables --
----------------
-
 local playerStandUIs = {}
 local screenGuiRef = nil
 
 local connectionsMaid = Connections.new()
 
-----------------
--- Functions --
-
-local function handlePurchase(button)
+local function handlePurchase(button: GuiButton)
 	local assetId = button:GetAttribute("AssetId")
 
 	PurchaseWrapper.attemptPurchase({
@@ -68,11 +55,11 @@ local function handlePurchase(button)
 	})
 end
 
-local function setupAllButtons(frame)
+local function setupAllButtons(frame: GuiObject)
 	ButtonWrapper.setupAllButtons(frame, handlePurchase, {hover = uiSoundGroup.Hover}, nil, true)
 end
 
-local function handleSurfaceGui(surfaceGui)
+local function handleSurfaceGui(surfaceGui: SurfaceGui)
 	if not surfaceGui:IsA("SurfaceGui") then
 		return
 	end
@@ -96,7 +83,7 @@ local function handleSurfaceGui(surfaceGui)
 	setupAllButtons(itemFrame)
 end
 
-local function populateStandUI(standModel, gamepasses, remove)
+local function populateStandUI(standModel: Model, gamepasses: any, remove: boolean?)
 	if remove then
 		local existingUI = playerStandUIs[standModel]
 		if existingUI then
@@ -188,9 +175,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

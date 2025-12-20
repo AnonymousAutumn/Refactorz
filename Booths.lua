@@ -1,15 +1,16 @@
---------------
--- Services --
---------------
+--[[
+	Booths - Manages booth claiming and purchasing.
+
+	Features:
+	- Booth claiming system
+	- Gamepass verification
+	- Stand replication
+]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -29,10 +30,6 @@ local RateLimiter = require(modulesFolder.Utilities.RateLimiter)
 local GameConfig = require(configurationFolder.GameConfig)
 local Claimer = require(script.Claimer)
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 local isShuttingDown = false
 
@@ -40,19 +37,15 @@ local standObjects = {}
 local MapPlayerToStand = {}
 local claimedStands = {}
 
----------------
--- Functions --
----------------
-
-local function replicateStandToClient(player, standModel, gamepasses: {}, remove)
+local function replicateStandToClient(player: Player, standModel: Model, gamepasses: {}, remove: boolean)
 	refreshStandRemoteEvent:FireClient(player, standModel, gamepasses, remove)
 end
 
-local function notify(player, message, messageType)
+local function notify(player: Player, message: string, messageType: string)
 	sendNotificationRemoteEvent:FireClient(player, message, messageType)
 end
 
-local function finalizeClaim(player, standObj, gamepasses: {})
+local function finalizeClaim(player: Player, standObj: any, gamepasses: {})
 	standObj:Claim(player)
 	MapPlayerToStand[player.Name] = standObj
 
@@ -64,7 +57,7 @@ local function finalizeClaim(player, standObj, gamepasses: {})
 	refreshStandRemoteEvent:FireAllClients(standObj.Stand, gamepasses, false)
 end
 
-local function promptGamepassPurchase(player, passId)
+local function promptGamepassPurchase(player: Player, passId: number): boolean
 	local ok, err = pcall(function()
 		MarketplaceService:PromptGamePassPurchase(player, passId)
 	end)
@@ -92,7 +85,7 @@ local function promptGamepassPurchase(player, passId)
 	return success
 end
 
-function TryClaimStand(player, standObj)
+function TryClaimStand(player: Player, standObj: any)
 	if MapPlayerToStand[player.Name] then
 		return
 	end
@@ -114,7 +107,7 @@ function TryClaimStand(player, standObj)
 	end
 end
 
-local function unclaimStand(player)
+local function unclaimStand(player: Player)
 	local standObj = MapPlayerToStand[player.Name]
 	if not standObj then
 		return
@@ -128,7 +121,7 @@ local function unclaimStand(player)
 	notify(player, "You've unclaimed your booth.", "Error")
 end
 
-local function replicateAllStandsToPlayer(player)
+local function replicateAllStandsToPlayer(player: Player)
 	if isShuttingDown then
 		return
 	end
@@ -154,7 +147,7 @@ local function cleanup()
 	table.clear(standObjects)
 end
 
-local function findAvailableStand()
+local function findAvailableStand(): any?
 	for standModel, standObj in pairs(standObjects) do
 		if not claimedStands[standModel] then
 			return standObj
@@ -163,7 +156,7 @@ local function findAvailableStand()
 	return nil
 end
 
-local function toggleStandClaim(player)
+local function toggleStandClaim(player: Player)
 	-- Scenario 2: User has stand claimed = unclaim stand
 	if MapPlayerToStand[player.Name] then
 		unclaimStand(player)
@@ -229,9 +222,5 @@ local function initialize()
 
 	game:BindToClose(cleanup)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

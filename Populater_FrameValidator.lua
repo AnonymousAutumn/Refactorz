@@ -1,31 +1,27 @@
------------------
--- Init Module --
------------------
+--[[
+	FrameValidator - Validates leaderboard frame structure.
+
+	Features:
+	- Frame hierarchy validation
+	- Child element accessors
+	- Structure verification
+]]
 
 local FrameValidator = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 
----------------
--- Functions --
----------------
-
-local function getFrameChild(frame, childName)
+local function getFrameChild(frame: Instance, childName: string): Instance?
 	return frame:FindFirstChild(childName)
 end
 
-function FrameValidator.validateStructure(frame)
+--[[
+	Validates that a frame has the expected structure.
+]]
+function FrameValidator.validateStructure(frame: Frame?): boolean
 	if not ValidationUtils.isValidFrame(frame) then
 		return false
 	end
@@ -42,24 +38,32 @@ function FrameValidator.validateStructure(frame)
 	return true
 end
 
-function FrameValidator.getChild(frame, childName)
+--[[
+	Gets a child element by name.
+]]
+function FrameValidator.getChild(frame: Instance, childName: string): Instance?
 	return frame:FindFirstChild(childName)
 end
 
-function FrameValidator.getHolderFrame(frame)
+--[[
+	Gets the holder frame child.
+]]
+function FrameValidator.getHolderFrame(frame: Instance): Instance?
 	return getFrameChild(frame, "Holder")
 end
 
-function FrameValidator.getInfoFrame(holderFrame)
+--[[
+	Gets the info frame child.
+]]
+function FrameValidator.getInfoFrame(holderFrame: Instance): Instance?
 	return getFrameChild(holderFrame, "InfoFrame")
 end
 
-function FrameValidator.getAmountFrame(frame)
+--[[
+	Gets the amount frame child.
+]]
+function FrameValidator.getAmountFrame(frame: Instance): Instance?
 	return getFrameChild(frame, "AmountFrame")
 end
-
--------------------
--- Return Module --
--------------------
 
 return FrameValidator

@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	LiveBoard - Displays live donation notifications.
+
+	Features:
+	- Cross-server donation subscription
+	- Tiered donation display
+	- Frame lifecycle management
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage:WaitForChild("Modules")
 local configurationFolder = ReplicatedStorage:WaitForChild("Configuration")
@@ -30,15 +31,7 @@ local donationScrollingFrame = leaderboardMainFrame.ScrollingFrame
 local largeDonationDisplayFrame = donationScrollingFrame.PriorityEntriesFrame
 local standardDonationDisplayFrame = donationScrollingFrame.NormalEntriesFrame
 
----------------
--- Constants --
----------------
-
 local DEFAULT_DONATION_DISPLAY_DURATION = GameConfig.LIVE_DONATION_CONFIG.DEFAULT_LIFETIME
-
----------------
--- Variables --
----------------
 
 local connectionsMaids = Connections.new()
 
@@ -47,12 +40,12 @@ local crossServerBridge = nil
 local isShuttingDown = false
 local activeTweens = {}
 
-local function trackConnection(connection)
+local function trackConnection(connection: RBXScriptConnection): RBXScriptConnection
 	connectionsMaids:add(connection)
 	return connection
 end
 
-local function trackTween(tween)
+local function trackTween(tween: Tween): Tween
 	table.insert(activeTweens, tween)
 	return tween
 end
@@ -60,7 +53,7 @@ end
 local function cleanupAllResources()
 	connectionsMaids:disconnect()
 
-	for _, tween in ipairs(activeTweens) do
+	for _, tween in pairs(activeTweens) do
 		pcall(function()
 			if tween then
 				tween:Cancel()
@@ -70,7 +63,7 @@ local function cleanupAllResources()
 	table.clear(activeTweens)
 end
 
-local function handleCountdownCompletion(donationFrame)
+local function handleCountdownCompletion(donationFrame: Frame)
 	frameManager:removeFromTracking(donationFrame, "large")
 
 	frameManager:adjustLayoutOrdering("Normal")
@@ -85,7 +78,7 @@ local function handleCountdownCompletion(donationFrame)
 	frameManager:scheduleCleanup(donationFrame, "standard", DEFAULT_DONATION_DISPLAY_DURATION)
 end
 
-local function setupLargeDonationDisplay(donationFrame, tierInfo)
+local function setupLargeDonationDisplay(donationFrame: Frame, tierInfo: any)
 	local setupSuccess = DonationFrameFactory.setupLargeDonationCountdown(donationFrame, tierInfo, handleCountdownCompletion, trackTween, trackConnection)
 
 	if not setupSuccess then
@@ -100,7 +93,7 @@ local function setupLargeDonationDisplay(donationFrame, tierInfo)
 	frameManager:addLargeFrame(donationFrame)
 end
 
-local function setupStandardDonationDisplay(donationFrame)
+local function setupStandardDonationDisplay(donationFrame: Frame)
 	local _, maxStandardFrames = DonationFrameManager.getMaxLimits()
 	frameManager:enforceLimit("standard", maxStandardFrames)
 
@@ -110,7 +103,7 @@ local function setupStandardDonationDisplay(donationFrame)
 	frameManager:scheduleCleanup(donationFrame, "standard", DEFAULT_DONATION_DISPLAY_DURATION)
 end
 
-local function createAndDisplayDonationFrame(donorUserId, recipientUserId, donationAmount, tierInfo, isLargeDonation)
+local function createAndDisplayDonationFrame(donorUserId: number, recipientUserId: number, donationAmount: number, tierInfo: any, isLargeDonation: boolean)
 	local newDonationFrame = DonationFrameFactory.createFrame(liveDonationPrefab, donorUserId, recipientUserId, donationAmount, tierInfo, isLargeDonation, trackTween)
 
 	if isLargeDonation then
@@ -120,7 +113,7 @@ local function createAndDisplayDonationFrame(donorUserId, recipientUserId, donat
 	end
 end
 
-local function processDonationNotification(donationNotificationData)
+local function processDonationNotification(donationNotificationData: any)
 	if isShuttingDown then
 		return
 	end
@@ -180,9 +173,5 @@ local function initialize()
 
 	game:BindToClose(cleanup)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

@@ -1,34 +1,26 @@
------------------
--- Init Module --
------------------
+--[[
+	PlayerRenderer - Renders player information in leaderboard entries.
+
+	Features:
+	- Avatar image display
+	- Username label setup
+	- Studio test fallback display
+]]
 
 local PlayerRenderer = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 
----------------
--- Constants --
----------------
-
 local STUDIO_TEST_AVATAR_ID = "rbxassetid://11569282129"
 local STUDIO_TEST_NAME = "Studio Test Profile"
 
----------------
--- Functions --
----------------
-
-function PlayerRenderer.setupStudioTestDisplay(usernameLabel, avatarImage)
+--[[
+	Sets up display for studio testing mode.
+]]
+function PlayerRenderer.setupStudioTestDisplay(usernameLabel: TextLabel?, avatarImage: ImageLabel?)
 	if ValidationUtils.isValidTextLabel(usernameLabel) then
 		usernameLabel.Text = STUDIO_TEST_NAME
 	end
@@ -37,7 +29,10 @@ function PlayerRenderer.setupStudioTestDisplay(usernameLabel, avatarImage)
 	end
 end
 
-function PlayerRenderer.setupRealPlayerDisplay(usernameLabel, avatarImage, playerUserId, formattedUsername, config)
+--[[
+	Sets up display for a real player.
+]]
+function PlayerRenderer.setupRealPlayerDisplay(usernameLabel: TextLabel?, avatarImage: ImageLabel?, playerUserId: number, formattedUsername: string, config: any)
 	if ValidationUtils.isValidTextLabel(usernameLabel) then
 		usernameLabel.Text = formattedUsername
 	end
@@ -45,9 +40,5 @@ function PlayerRenderer.setupRealPlayerDisplay(usernameLabel, avatarImage, playe
 		avatarImage.Image = string.format(config.AVATAR_HEADSHOT_URL, playerUserId)
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return PlayerRenderer

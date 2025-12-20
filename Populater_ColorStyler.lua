@@ -1,39 +1,31 @@
------------------
--- Init Module --
------------------
+--[[
+	ColorStyler - Applies color styling to leaderboard entries.
+
+	Features:
+	- Rank color assignment
+	- Alternating row colors
+	- Text stroke styling
+]]
 
 local ColorStyler = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local DEFAULT_EVEN_ROW_COLOR = Color3.fromRGB(50, 50, 50)
 local DEFAULT_ODD_ROW_COLOR = Color3.fromRGB(40, 40, 40)
 local RANK_STROKE_THICKNESS = 3
 
----------------
--- Functions --
----------------
-
-local function getFrameChild(frame, childName)
+local function getFrameChild(frame: Instance, childName: string): Instance?
 	return frame:FindFirstChild(childName)
 end
 
-function ColorStyler.getRankColor(playerRank, rankColorConfiguration)
+--[[
+	Gets the color configuration for a specific rank.
+]]
+function ColorStyler.getRankColor(playerRank: number, rankColorConfiguration: { any }?): any?
 	if type(rankColorConfiguration) ~= "table" then
 		return nil
 	end
@@ -43,11 +35,17 @@ function ColorStyler.getRankColor(playerRank, rankColorConfiguration)
 	return nil
 end
 
-function ColorStyler.getAlternatingRowColor(rankPosition)
+--[[
+	Gets alternating row background color.
+]]
+function ColorStyler.getAlternatingRowColor(rankPosition: number): Color3
 	return (rankPosition % 2 == 0) and DEFAULT_EVEN_ROW_COLOR or DEFAULT_ODD_ROW_COLOR
 end
 
-function ColorStyler.applyStrokeToLabel(label, strokeColor)
+--[[
+	Applies stroke styling to a single label.
+]]
+function ColorStyler.applyStrokeToLabel(label: TextLabel, strokeColor: Color3)
 	local uiStroke = getFrameChild(label, "UIStroke")
 	if ValidationUtils.isValidUIStroke(uiStroke) then
 		uiStroke.Thickness = RANK_STROKE_THICKNESS
@@ -55,16 +53,15 @@ function ColorStyler.applyStrokeToLabel(label, strokeColor)
 	end
 end
 
-function ColorStyler.applyStrokeToLabels(labels, strokeColor)
-	for _, label in labels do
+--[[
+	Applies stroke styling to multiple labels.
+]]
+function ColorStyler.applyStrokeToLabels(labels: { TextLabel }, strokeColor: Color3)
+	for _, label in pairs(labels) do
 		if ValidationUtils.isValidTextLabel(label) then
 			ColorStyler.applyStrokeToLabel(label, strokeColor)
 		end
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return ColorStyler

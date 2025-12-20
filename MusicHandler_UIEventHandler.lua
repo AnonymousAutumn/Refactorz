@@ -1,35 +1,31 @@
------------------
--- Init Module --
------------------
+--[[
+	UIEventHandler - Handles music player UI events.
+
+	Features:
+	- Volume slider drag handling
+	- Track navigation buttons
+	- Input position normalization
+]]
 
 local UIEventHandler = {}
 UIEventHandler.updateVolumeCallback = nil
 UIEventHandler.playNextTrackCallback = nil
 UIEventHandler.playPreviousTrackCallback = nil
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
----------------
--- Constants --
----------------
 
 local DRAG_DETECTION_RADIUS = 300
 
----------------
--- Functions --
----------------
-
-local function getRelativeX(sliderFrame, inputPosX)
+local function getRelativeX(sliderFrame: Frame, inputPosX: number): number
 	local sliderWidth = math.max(sliderFrame.AbsoluteSize.X, 1)
 	local relative = (inputPosX - sliderFrame.AbsolutePosition.X) / sliderWidth
 	return math.clamp(relative, 0, 1)
 end
 
-function UIEventHandler.setupEventConnections(uiElements, connections, musicTracks)
+--[[
+	Sets up all UI event connections.
+]]
+function UIEventHandler.setupEventConnections(uiElements: any, connections: any, musicTracks: { any })
 	local dragging = false
 	local pseudoRadius = DRAG_DETECTION_RADIUS
 
@@ -70,9 +66,5 @@ function UIEventHandler.setupEventConnections(uiElements, connections, musicTrac
 		end)
 	)
 end
-
--------------------
--- Return Module --
--------------------
 
 return UIEventHandler

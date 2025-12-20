@@ -1,14 +1,18 @@
------------------
--- Init Module --
------------------
+--[[
+	VolumeControl - Controls volume slider and audio levels.
+
+	Features:
+	- Volume normalization
+	- Slider UI updates
+	- Audio track volume sync
+]]
 
 local VolumeControl = {}
 
----------------
--- Functions --
----------------
-
-function VolumeControl.updateVolume(volumeState, currentAudioTrack, volumeFill, volumeDragHandle, newVolumeNormalized)
+--[[
+	Updates volume and UI elements.
+]]
+function VolumeControl.updateVolume(volumeState: any, currentAudioTrack: Sound?, volumeFill: Frame, volumeDragHandle: GuiButton, newVolumeNormalized: number)
 	volumeState.currentVolumeNormalized = math.clamp(newVolumeNormalized, 0, 1)
 
 	local scaledVolume = volumeState.currentVolumeNormalized * volumeState.maxVolume
@@ -21,14 +25,13 @@ function VolumeControl.updateVolume(volumeState, currentAudioTrack, volumeFill, 
 	volumeDragHandle.Position = UDim2.new(volumeState.currentVolumeNormalized, 0, 0.5, 0)
 end
 
-function VolumeControl.initializeDefaults(volumeFill, volumeDragHandle, currentVolumeNormalized)
+--[[
+	Initializes default volume slider positions.
+]]
+function VolumeControl.initializeDefaults(volumeFill: Frame, volumeDragHandle: GuiButton, currentVolumeNormalized: number)
 	local sliderPosition = math.clamp(currentVolumeNormalized, 0, 1)
 	volumeDragHandle.Position = UDim2.new(sliderPosition, 0, 0.5, 0)
 	volumeFill.Size = UDim2.new(sliderPosition, 0, 1, 0)
 end
-
--------------------
--- Return Module --
--------------------
 
 return VolumeControl

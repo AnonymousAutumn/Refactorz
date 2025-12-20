@@ -1,27 +1,23 @@
------------------
--- Init Module --
------------------
+--[[
+	ScrollAnimator - Animates scrolling track name labels.
+
+	Features:
+	- Horizontal text scrolling
+	- Centered/left alignment modes
+	- Animation lifecycle management
+]]
 
 local ScrollAnimator = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local TweenHelper = require(modulesFolder.Utilities.TweenHelper)
 
----------------
--- Functions --
----------------
-
-function ScrollAnimator.cleanupScrollAnimations(scrollState)
+--[[
+	Cleans up existing scroll animations.
+]]
+function ScrollAnimator.cleanupScrollAnimations(scrollState: any)
 	if scrollState.tween then
 		scrollState.tween:Cancel()
 		scrollState.tween = nil
@@ -33,18 +29,27 @@ function ScrollAnimator.cleanupScrollAnimations(scrollState)
 	end
 end
 
-function ScrollAnimator.setupCenteredLabel(trackNameLabel)
+--[[
+	Sets up label for centered display.
+]]
+function ScrollAnimator.setupCenteredLabel(trackNameLabel: TextLabel)
 	trackNameLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 	trackNameLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
 	trackNameLabel.Size = UDim2.new(1, 0, 1, 0)
 end
 
-function ScrollAnimator.setupLeftAlignedLabel(trackNameLabel)
+--[[
+	Sets up label for left-aligned scrolling.
+]]
+function ScrollAnimator.setupLeftAlignedLabel(trackNameLabel: TextLabel)
 	trackNameLabel.AnchorPoint = Vector2.new(0, 0.5)
 	trackNameLabel.Position = UDim2.new(0, 0, 0.5, 0)
 end
 
-function ScrollAnimator.createScrollAnimation(trackNameLabel, scrollState, textWidth, frameWidth, config)
+--[[
+	Creates the scrolling animation loop.
+]]
+function ScrollAnimator.createScrollAnimation(trackNameLabel: TextLabel, scrollState: any, textWidth: number, frameWidth: number, config: any)
 	trackNameLabel.Size = UDim2.new(0, textWidth, 1, 0)
 
 	local startX = 0
@@ -70,7 +75,10 @@ function ScrollAnimator.createScrollAnimation(trackNameLabel, scrollState, textW
 	end)
 end
 
-function ScrollAnimator.animateTrackNameScroll(trackNameLabel, trackFrame, scrollState, config)
+--[[
+	Main entry point to animate track name scrolling.
+]]
+function ScrollAnimator.animateTrackNameScroll(trackNameLabel: TextLabel, trackFrame: Frame, scrollState: any, config: any)
 	ScrollAnimator.cleanupScrollAnimations(scrollState)
 
 	if trackNameLabel.Text == config.BUFFERING_TEXT then
@@ -91,9 +99,5 @@ function ScrollAnimator.animateTrackNameScroll(trackNameLabel, trackFrame, scrol
 
 	ScrollAnimator.createScrollAnimation(trackNameLabel, scrollState, textWidth, frameWidth, config)
 end
-
--------------------
--- Return Module --
--------------------
 
 return ScrollAnimator

@@ -1,35 +1,24 @@
------------------
--- Init Module --
------------------
+--[[
+	TimeoutManager - Manages game timeout countdowns.
+
+	Features:
+	- Countdown display updates
+	- Cancellation support
+	- Status text integration
+]]
 
 local TimeoutManager = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local GameStateManager = require(script.Parent.GameStateManager)
 local StatusAnimator = require(script.Parent.StatusAnimator)
 
----------------
--- Constants --
----------------
-
 local MESSAGE_FORMAT_TIMEOUT = "Time Left: %d"
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func, errorMessage)
+local function safeExecute(func: () -> (), errorMessage: string): boolean
 	local success, errorDetails = pcall(func)
 	if not success then
 		warn(errorMessage, errorDetails)
@@ -37,17 +26,17 @@ local function safeExecute(func, errorMessage)
 	return success
 end
 
-local function updateTimeoutDisplay(secondsLeft)
+local function updateTimeoutDisplay(secondsLeft: number)
 	safeExecute(function()
 		StatusAnimator.updateStatusText(`Time Left: {secondsLeft}`)
 	end, "Error updating timeout text")
 end
 
-local function isTimeoutActive(handlerId, isCancelled)
+local function isTimeoutActive(handlerId: number, isCancelled: boolean): boolean
 	return not isCancelled and GameStateManager.getTimeoutSequenceId() == handlerId
 end
 
-local function runTimeoutCountdown(timeRemaining, handlerId, isCancelledRef)
+local function runTimeoutCountdown(timeRemaining: number, handlerId: number, isCancelledRef: { value: boolean })
 	local secondsLeft = timeRemaining
 	while secondsLeft > 0 and isTimeoutActive(handlerId, isCancelledRef.value) do
 		updateTimeoutDisplay(secondsLeft)
@@ -56,14 +45,17 @@ local function runTimeoutCountdown(timeRemaining, handlerId, isCancelledRef)
 	end
 end
 
-local function finalizeTimeout(finalMessage, handlerId, isCancelledRef)
+local function finalizeTimeout(finalMessage: string, handlerId: number, isCancelledRef: { value: boolean })
 	if isTimeoutActive(handlerId, isCancelledRef.value) then
 		StatusAnimator.updateStatusText(finalMessage)
 		StatusAnimator.hideStatusInterface()
 	end
 end
 
-function TimeoutManager.createTimeoutHandler(timeRemaining, finalMessage)
+--[[
+	Creates a timeout handler with countdown and cancellation support.
+]]
+function TimeoutManager.createTimeoutHandler(timeRemaining: number?, finalMessage: string?): { cancel: () -> (), isActive: () -> boolean }
 	if not (ValidationUtils.isValidNumber(timeRemaining) and timeRemaining >= 0) or not ValidationUtils.isValidString(finalMessage) then
 		return {
 			cancel = function() end,
@@ -97,6 +89,9 @@ function TimeoutManager.createTimeoutHandler(timeRemaining, finalMessage)
 	}
 end
 
+--[[
+	Cancels the active timeout handler.
+]]
 function TimeoutManager.cancelTimeoutHandler()
 	if not GameStateManager.state.activeTimeoutHandler then
 		return
@@ -110,9 +105,5 @@ function TimeoutManager.cancelTimeoutHandler()
 
 	GameStateManager.state.activeTimeoutHandler = nil
 end
-
--------------------
--- Return Module --
--------------------
 
 return TimeoutManager

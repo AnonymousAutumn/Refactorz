@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	GameUI - Client-side game status UI controller.
+
+	Features:
+	- Game status display and animations
+	- Player exit handling
+	- Timeout countdown management
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -28,18 +29,10 @@ local UpdateCoordinator = require(script.UpdateCoordinator)
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
----------------
--- Constants --
----------------
-
 local STATUS_MESSAGE_DISPLAY_DURATION = 3
 local MESSAGE_PLAYER_LEFT = "left the game"
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func, errorMessage)
+local function safeExecute(func: () -> (), errorMessage: string): boolean
 	local success, errorDetails = pcall(func)
 	if not success then
 		warn(errorMessage, errorDetails)
@@ -157,9 +150,5 @@ local function initialize()
 		end)
 	)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

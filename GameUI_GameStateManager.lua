@@ -1,6 +1,11 @@
------------------
--- Init Module --
------------------
+--[[
+	GameStateManager - Manages game UI state and resources.
+
+	Features:
+	- Connection and tween tracking
+	- Task lifecycle management
+	- State reset and cleanup
+]]
 
 local GameStateManager = {}
 GameStateManager.state = {
@@ -16,26 +21,14 @@ GameStateManager.state = {
 	connections = nil,
 	tweens = {},
 	threads = {},
-} 
-
---------------
--- Services --
---------------
+}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func, errorMessage)
+local function safeExecute(func: () -> (), errorMessage: string): boolean
 	local success, errorDetails = pcall(func)
 	if not success then
 		warn(errorMessage, errorDetails)
@@ -43,23 +36,35 @@ local function safeExecute(func, errorMessage)
 	return success
 end
 
-function GameStateManager.trackConnection(connection)
+--[[
+	Tracks a connection for later cleanup.
+]]
+function GameStateManager.trackConnection(connection: RBXScriptConnection): RBXScriptConnection
 	GameStateManager.state.connections:add(connection)
 	return connection
 end
 
-function GameStateManager.trackTween(tween)
+--[[
+	Tracks a tween for later cleanup.
+]]
+function GameStateManager.trackTween(tween: Tween): Tween
 	table.insert(GameStateManager.state.tweens, tween)
 	return tween
 end
 
-function GameStateManager.trackTask(threadHandle)
+--[[
+	Tracks a task thread for later cleanup.
+]]
+function GameStateManager.trackTask(threadHandle: thread): thread
 	table.insert(GameStateManager.state.threads, threadHandle)
 	return threadHandle
 end
 
+--[[
+	Cancels all tracked tweens.
+]]
 function GameStateManager.cancelAllTweens()
-	for _, tween in ipairs(GameStateManager.state.tweens) do
+	for _, tween in pairs(GameStateManager.state.tweens) do
 		pcall(function()
 			if tween then
 				tween:Cancel()
@@ -69,8 +74,11 @@ function GameStateManager.cancelAllTweens()
 	table.clear(GameStateManager.state.tweens)
 end
 
+--[[
+	Cancels all tracked tasks.
+]]
 function GameStateManager.cancelAllTasks()
-	for _, thread in ipairs(GameStateManager.state.threads) do
+	for _, thread in pairs(GameStateManager.state.threads) do
 		pcall(function()
 			if thread and coroutine.status(thread) == "suspended" then
 				task.cancel(thread)
@@ -80,39 +88,49 @@ function GameStateManager.cancelAllTasks()
 	table.clear(GameStateManager.state.threads)
 end
 
+--[[
+	Disconnects all tracked connections.
+]]
 function GameStateManager.disconnectAllConnections()
 	GameStateManager.state.connections:disconnect()
 end
 
+--[[
+	Resets the status visibility state.
+]]
 function GameStateManager.resetState()
 	GameStateManager.state.isStatusVisible = false
 	GameStateManager.state.previousStatusText = ""
 end
 
+--[[
+	Increments the timeout sequence ID.
+]]
 function GameStateManager.incrementTimeoutSequence()
 	GameStateManager.state.timeoutSequenceId += 1
 end
 
+--[[
+	Increments the status sequence ID.
+]]
 function GameStateManager.incrementStatusSequence()
 	GameStateManager.state.statusSequenceId += 1
 end
 
-function GameStateManager.getTimeoutSequenceId()
+--[[
+	Returns the current timeout sequence ID.
+]]
+function GameStateManager.getTimeoutSequenceId(): number
 	return GameStateManager.state.timeoutSequenceId
 end
 
-function GameStateManager.getStatusSequenceId()
+--[[
+	Returns the current status sequence ID.
+]]
+function GameStateManager.getStatusSequenceId(): number
 	return GameStateManager.state.statusSequenceId
 end
 
---------------------
--- Initialization --
---------------------
-
 GameStateManager.state.connections = Connections.new()
-
--------------------
--- Return Module --
--------------------
 
 return GameStateManager

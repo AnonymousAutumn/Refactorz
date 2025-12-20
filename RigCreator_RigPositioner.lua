@@ -1,15 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	RigPositioner - Positions character rigs at rank locations.
+
+	Features:
+	- R15 and R6 rig type support
+	- Height-adjusted positioning
+	- Safe CFrame operations
+]]
 
 local RigPositioner = {}
 RigPositioner.safeExecute = nil
 
----------------
--- Functions --
----------------
-
-local function getR15PositionTarget(rankPositionReference, characterRootPart, humanoid)
+local function getR15PositionTarget(rankPositionReference: Model, characterRootPart: BasePart, humanoid: Humanoid): CFrame?
 	local r15PositionTarget = rankPositionReference:FindFirstChild("R15")
 	if not r15PositionTarget or not r15PositionTarget:IsA("BasePart") then
 		return nil
@@ -19,12 +20,15 @@ local function getR15PositionTarget(rankPositionReference, characterRootPart, hu
 	return r15PositionTarget.CFrame * CFrame.new(0, r15HeightOffset, 0)
 end
 
-local function getR6PositionTarget(rankPositionReference)
+local function getR6PositionTarget(rankPositionReference: Model): CFrame?
 	local r6PositionTarget = rankPositionReference:FindFirstChild("R6")
 	return (r6PositionTarget and r6PositionTarget:IsA("BasePart")) and r6PositionTarget.CFrame or nil
 end
 
-function RigPositioner.positionCharacterAtRankLocation(characterRig, rankPositionReference)
+--[[
+	Positions a character rig at the specified rank location.
+]]
+function RigPositioner.positionCharacterAtRankLocation(characterRig: Model?, rankPositionReference: Model?): boolean
 	if not characterRig or not characterRig:IsA("Model") or not rankPositionReference or not rankPositionReference:IsA("Model") then
 		return false
 	end
@@ -55,9 +59,5 @@ function RigPositioner.positionCharacterAtRankLocation(characterRig, rankPositio
 		end
 	end)
 end
-
--------------------
--- Return Module --
--------------------
 
 return RigPositioner

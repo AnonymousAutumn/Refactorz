@@ -1,24 +1,21 @@
------------------
--- Init Module --
------------------
+--[[
+	AnimationController - Manages character idle animations.
+
+	Features:
+	- R15 and R6 idle animation support
+	- Animation track lifecycle management
+	- Safe animation cleanup
+]]
 
 local AnimationController = {}
 AnimationController.safeExecute = nil
-
----------------
--- Constants --
----------------
 
 local CHARACTER_IDLE_ANIMATION_IDS = {
 	R15 = "rbxassetid://507766388",
 	R6 = "rbxassetid://180435571",
 }
 
----------------
--- Functions --
----------------
-
-local function createAndLoadAnimation(animator, animationId)
+local function createAndLoadAnimation(animator: Animator, animationId: string): AnimationTrack
 	local animation = Instance.new("Animation")
 	animation.AnimationId = animationId
 	local idleTrack = animator:LoadAnimation(animation)
@@ -27,7 +24,10 @@ local function createAndLoadAnimation(animator, animationId)
 	return idleTrack
 end
 
-function AnimationController.startCharacterIdleAnimation(characterHumanoid)
+--[[
+	Starts the idle animation for a character humanoid.
+]]
+function AnimationController.startCharacterIdleAnimation(characterHumanoid: Humanoid?): AnimationTrack?
 	if not characterHumanoid or not characterHumanoid:IsA("Humanoid") then
 		return nil
 	end
@@ -50,7 +50,10 @@ function AnimationController.startCharacterIdleAnimation(characterHumanoid)
 	return (success and animationTrack and animationTrack:IsA("AnimationTrack")) and animationTrack or nil
 end
 
-function AnimationController.cleanupAnimationTrack(animationTrack)
+--[[
+	Cleans up an animation track by stopping and destroying it.
+]]
+function AnimationController.cleanupAnimationTrack(animationTrack: AnimationTrack?)
 	if not animationTrack then
 		return
 	end
@@ -66,9 +69,5 @@ function AnimationController.cleanupAnimationTrack(animationTrack)
 		animationTrack:Destroy()
 	end)
 end
-
--------------------
--- Return Module --
--------------------
 
 return AnimationController

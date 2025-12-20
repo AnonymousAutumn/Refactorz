@@ -1,30 +1,26 @@
------------------
--- Init Module --
------------------
+--[[
+	TrackManager - Manages audio track lifecycle.
+
+	Features:
+	- Sound creation and playback
+	- Track index navigation
+	- Sound approval validation
+]]
 
 local TrackManager = {}
 TrackManager.setBufferingCallback = nil
 TrackManager.updateTrackNameCallback = nil
 TrackManager.animateScrollCallback = nil
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
----------------
--- Constants --
----------------
 
 local SOUND_LOAD_TIMEOUT = 5
 local SOUND_LOAD_POLL_INTERVAL = 0.1
 
----------------
--- Functions --
----------------
-
-function TrackManager.stopCurrentTrack(state)
+--[[
+	Stops and cleans up the current track.
+]]
+function TrackManager.stopCurrentTrack(state: any)
 	state.soundConnections:disconnect()
 	if state.currentAudioTrack then
 		state.currentAudioTrack:Stop()
@@ -33,25 +29,37 @@ function TrackManager.stopCurrentTrack(state)
 	end
 end
 
-function TrackManager.isValidTrackIndex(index, musicTracks)
+--[[
+	Checks if a track index is valid.
+]]
+function TrackManager.isValidTrackIndex(index: number, musicTracks: { any }): boolean
 	return #musicTracks > 0 and index >= 1 and index <= #musicTracks
 end
 
-function TrackManager.getNextTrackIndex(currentIndex, musicTracks)
+--[[
+	Gets the next track index with wraparound.
+]]
+function TrackManager.getNextTrackIndex(currentIndex: number, musicTracks: { any }): number
 	if #musicTracks == 0 then
 		return 1
 	end
 	return (currentIndex % #musicTracks) + 1
 end
 
-function TrackManager.getPreviousTrackIndex(currentIndex, musicTracks)
+--[[
+	Gets the previous track index with wraparound.
+]]
+function TrackManager.getPreviousTrackIndex(currentIndex: number, musicTracks: { any }): number
 	if #musicTracks == 0 then
 		return 1
 	end
 	return ((currentIndex - 2) % #musicTracks) + 1
 end
 
-function TrackManager.createSound(trackData, parentInstance, currentVolumeNormalized, maxVolume)
+--[[
+	Creates a new sound instance for a track.
+]]
+function TrackManager.createSound(trackData: any, parentInstance: Instance, currentVolumeNormalized: number, maxVolume: number): Sound
 	local newSound = Instance.new("Sound")
 	newSound.SoundId = `rbxassetid://{trackData.Id}`
 	newSound.Name = trackData.Name
@@ -61,7 +69,10 @@ function TrackManager.createSound(trackData, parentInstance, currentVolumeNormal
 	return newSound
 end
 
-function TrackManager.setBufferingState(bufferingText)
+--[[
+	Sets the UI to buffering state.
+]]
+function TrackManager.setBufferingState(bufferingText: string)
 	if TrackManager.setBufferingCallback then
 		TrackManager.setBufferingCallback(false)
 	end
@@ -73,7 +84,10 @@ function TrackManager.setBufferingState(bufferingText)
 	end
 end
 
-function TrackManager.onSoundLoaded(sound, trackData)
+--[[
+	Handles sound loaded event.
+]]
+function TrackManager.onSoundLoaded(sound: Sound, trackData: any)
 	sound:Play()
 	if TrackManager.setBufferingCallback then
 		TrackManager.setBufferingCallback(true)
@@ -86,7 +100,10 @@ function TrackManager.onSoundLoaded(sound, trackData)
 	end
 end
 
-function TrackManager.setupSoundEvents(sound, trackData, state, playTrackAtIndexFn: (number) -> ())
+--[[
+	Sets up sound event handlers.
+]]
+function TrackManager.setupSoundEvents(sound: Sound, trackData: any, state: any, playTrackAtIndexFn: (number) -> ())
 	local loadedConnection = sound.Loaded:Connect(function()
 		TrackManager.onSoundLoaded(sound, trackData)
 	end)
@@ -109,7 +126,10 @@ function TrackManager.setupSoundEvents(sound, trackData, state, playTrackAtIndex
 	state.soundConnections:add(loadedConnection, endedConnection)
 end
 
-function TrackManager.isApprovedSound(trackData, testParent)
+--[[
+	Validates that a sound can be loaded.
+]]
+function TrackManager.isApprovedSound(trackData: any, testParent: Instance): boolean
 	local testSound = Instance.new("Sound")
 	testSound.SoundId = `rbxassetid://{trackData.Id}`
 	testSound.Parent = testParent
@@ -130,15 +150,7 @@ function TrackManager.isApprovedSound(trackData, testParent)
 
 	testSound:Destroy()
 
-	if soundLoaded then
-		return true
-	else
-		return false
-	end
+	return soundLoaded
 end
-
--------------------
--- Return Module --
--------------------
 
 return TrackManager

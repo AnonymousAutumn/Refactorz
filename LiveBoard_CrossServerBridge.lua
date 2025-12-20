@@ -1,3 +1,12 @@
+--[[
+	CrossServerBridge - Cross-server messaging for donation notifications.
+
+	Features:
+	- MessagingService subscription
+	- Donation data validation
+	- Cross-server event handling
+]]
+
 local MessagingService = game:GetService("MessagingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,7 +22,10 @@ local CROSS_SERVER_DONATION_MESSAGING_TOPIC = GameConfig.MESSAGING_SERVICE_CONFI
 local CrossServerBridge = {}
 CrossServerBridge.__index = CrossServerBridge
 
-function CrossServerBridge.new()
+--[[
+	Creates a new CrossServerBridge instance.
+]]
+function CrossServerBridge.new(): any
 	local self = setmetatable({}, CrossServerBridge) 
 
 	self.messagingSubscription = nil 
@@ -22,7 +34,10 @@ function CrossServerBridge.new()
 	return self
 end
 
-function CrossServerBridge.validateDonationData(donationData)
+--[[
+	Validates donation data structure.
+]]
+function CrossServerBridge.validateDonationData(donationData: any): boolean
 	if type(donationData) ~= "table" then
 		warn(`{TAG} Donation data is not a table`)
 		return false
@@ -42,7 +57,10 @@ function CrossServerBridge.validateDonationData(donationData)
 	return true
 end
 
-function CrossServerBridge:handleMessage(messagingServicePacket, processDonation)
+--[[
+	Handles incoming messaging service packets.
+]]
+function CrossServerBridge:handleMessage(messagingServicePacket: any, processDonation: (any) -> ())
 	if self.isShuttingDown then
 		return
 	end
@@ -53,7 +71,10 @@ function CrossServerBridge:handleMessage(messagingServicePacket, processDonation
 	end
 end
 
-function CrossServerBridge:subscribe(processDonation)
+--[[
+	Subscribes to cross-server donation notifications.
+]]
+function CrossServerBridge:subscribe(processDonation: (any) -> ()): boolean
 	if self.messagingSubscription then
 		warn(`{TAG} Already subscribed to messaging service`)
 		return false
@@ -74,6 +95,9 @@ function CrossServerBridge:subscribe(processDonation)
 	end
 end
 
+--[[
+	Disconnects from messaging service.
+]]
 function CrossServerBridge:disconnect()
 	if self.messagingSubscription then
 		pcall(function()
@@ -83,12 +107,18 @@ function CrossServerBridge:disconnect()
 	end
 end
 
+--[[
+	Shuts down the bridge and cleans up resources.
+]]
 function CrossServerBridge:shutdown()
 	self.isShuttingDown = true
 	self:disconnect()
 end
 
-function CrossServerBridge.getTopic()
+--[[
+	Gets the messaging topic name.
+]]
+function CrossServerBridge.getTopic(): string
 	return CROSS_SERVER_DONATION_MESSAGING_TOPIC
 end
 

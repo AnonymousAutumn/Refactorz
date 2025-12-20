@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	MusicHandler - Client-side music player controller.
+
+	Features:
+	- Track playback management
+	- Volume control
+	- Scrolling track name animation
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -22,10 +23,6 @@ local VolumeControl = require(script.VolumeControl)
 local TrackManager = require(script.TrackManager)
 local UIEventHandler = require(script.UIEventHandler)
 
----------------
--- Constants --
----------------
-
 local MAX_VOLUME = 0.5
 
 local MUSIC_PLAYER_CONFIG = {
@@ -35,10 +32,6 @@ local MUSIC_PLAYER_CONFIG = {
 	SCROLL_INITIAL_DELAY = 2,
 	BUFFERING_TEXT = "Buffering...",
 }
-
----------------
--- Variables --
----------------
 
 local connectionsMaid = Connections.new()
 
@@ -70,19 +63,15 @@ local volumeFill
 local volumeDragHandle
 local volumeDragDetector
 
----------------
--- Functions --
----------------
-
 local function animateTrackNameScroll()
 	ScrollAnimator.animateTrackNameScroll(trackNameLabel, trackFrame, scrollState, MUSIC_PLAYER_CONFIG)
 end
 
-local function updateVolume(newVolumeNormalized)
+local function updateVolume(newVolumeNormalized: number)
 	VolumeControl.updateVolume(volumeState, playbackState.currentAudioTrack, volumeFill, volumeDragHandle, newVolumeNormalized)
 end
 
-local function playTrackAtIndex(targetIndex)
+local function playTrackAtIndex(targetIndex: number)
 	if #MusicLibrary == 0 then
 		warn("No music tracks available")
 		return
@@ -208,9 +197,5 @@ local function initialize()
 		end)
 	)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

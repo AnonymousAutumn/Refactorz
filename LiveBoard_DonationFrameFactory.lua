@@ -1,3 +1,12 @@
+--[[
+	DonationFrameFactory - Creates and configures donation display frames.
+
+	Features:
+	- Frame creation from templates
+	- Avatar and text configuration
+	- Countdown bar animations
+]]
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
@@ -22,7 +31,7 @@ local DONATION_FADE_IN_ANIMATION = TweenInfo.new(0.5)
 
 local STANDARD_FRAME_BASE_LAYOUT_ORDER = 1
 
-local function retrievePlayerUsernameFromId(playerUserId)
+local function retrievePlayerUsernameFromId(playerUserId: number): string
 	if not ValidationUtils.isValidUserId(playerUserId) then
 		warn(`{TAG} Invalid user ID: {tostring(playerUserId)}`)
 		return `<unknown{playerUserId}>`
@@ -31,14 +40,14 @@ local function retrievePlayerUsernameFromId(playerUserId)
 	return UsernameCache.getUsername(playerUserId)
 end
 
-local function generateDonationAnnouncementText(donorUserId, recipientUserId, donationAmount)
+local function generateDonationAnnouncementText(donorUserId: number, recipientUserId: number, donationAmount: number): string
 	local donorName = retrievePlayerUsernameFromId(donorUserId)
 	local recipientName = retrievePlayerUsernameFromId(recipientUserId)
 	local formattedAmount = `{ROBUX_CURRENCY_ICON}{FormatString.formatNumberWithThousandsSeparatorCommas(donationAmount)}`
 	return `{donorName} has donated {formattedAmount} to {recipientName}!`
 end
 
-local function configureTextLabel(textLabel, tierInfo, announcementText)
+local function configureTextLabel(textLabel: TextLabel?, tierInfo: any, announcementText: string)
 	if not (textLabel and textLabel:IsA("TextLabel")) then
 		return
 	end
@@ -47,7 +56,7 @@ local function configureTextLabel(textLabel, tierInfo, announcementText)
 	lbl.Text = announcementText
 end
 
-local function configureAvatarIcon(avatarIcon, userId)
+local function configureAvatarIcon(avatarIcon: ImageLabel?, userId: number)
 	if not (avatarIcon and avatarIcon:IsA("ImageLabel")) then
 		return
 	end
@@ -76,7 +85,7 @@ local function configureDonationDisplayFrame(
 	fadeInAnimation:Play()
 end
 
-local function configureCountdownBar(countdownBarMain, tierInfo)
+local function configureCountdownBar(countdownBarMain: Frame?, tierInfo: any)
 	if countdownBarMain and countdownBarMain:IsA("Frame") then
 		countdownBarMain.BackgroundColor3 = tierInfo.Color
 	end
@@ -111,19 +120,25 @@ local function setupCountdownCompletionHandler(countdownBarAnimation, donationFr
 	end
 end
 
-function DonationFrameFactory.calculateLayoutOrder(isLargeDonation, donationAmount)
+--[[
+	Calculates layout order for a donation frame.
+]]
+function DonationFrameFactory.calculateLayoutOrder(isLargeDonation: boolean, donationAmount: number): number
 	return if isLargeDonation then -donationAmount else STANDARD_FRAME_BASE_LAYOUT_ORDER
 end
 
+--[[
+	Creates a new donation display frame.
+]]
 function DonationFrameFactory.createFrame(
-	liveDonationPrefab,
-	donorUserId,
-	recipientUserId,
-	donationAmount,
-	tierInfo,
-	isLargeDonation,
-	trackTween
-)
+	liveDonationPrefab: Frame,
+	donorUserId: number,
+	recipientUserId: number,
+	donationAmount: number,
+	tierInfo: any,
+	isLargeDonation: boolean,
+	trackTween: (Tween) -> Tween
+): Frame
 	local newDonationFrame = liveDonationPrefab:Clone() 
 	newDonationFrame.LayoutOrder = DonationFrameFactory.calculateLayoutOrder(isLargeDonation, donationAmount)
 	newDonationFrame.GroupTransparency = 1
@@ -133,7 +148,10 @@ function DonationFrameFactory.createFrame(
 	return newDonationFrame
 end
 
-function DonationFrameFactory.setupLargeDonationCountdown(donationFrame, tierInfo, onCountdownComplete, trackTween, trackConnection)
+--[[
+	Sets up countdown animation for large donations.
+]]
+function DonationFrameFactory.setupLargeDonationCountdown(donationFrame: Frame, tierInfo: any, onCountdownComplete: (Frame) -> (), trackTween: (Tween) -> Tween, trackConnection: (RBXScriptConnection) -> RBXScriptConnection): boolean
 	local countdownBarFrame = donationFrame:FindFirstChild("BarFrame")
 	if not countdownBarFrame then
 		warn(`{TAG} BarFrame not found in donation template`)

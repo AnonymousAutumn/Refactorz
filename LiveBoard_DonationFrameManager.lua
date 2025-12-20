@@ -1,3 +1,12 @@
+--[[
+	DonationFrameManager - Manages donation display frame lifecycle.
+
+	Features:
+	- Frame tracking and limits
+	- Layout ordering
+	- Automatic cleanup
+]]
+
 local MAX_STANDARD_FRAMES = 10
 local MAX_LARGE_FRAMES = 5
 local FRAME_CLEANUP_INTERVAL = 30
@@ -8,7 +17,10 @@ local STANDARD_FRAME_LAYOUT_MODIFIER = 1
 local DonationFrameManager = {}
 DonationFrameManager.__index = DonationFrameManager
 
-function DonationFrameManager.new(largeDonationContainer, standardDonationContainer)
+--[[
+	Creates a new DonationFrameManager instance.
+]]
+function DonationFrameManager.new(largeDonationContainer: Frame, standardDonationContainer: Frame): any
 	local self = setmetatable({}, DonationFrameManager) 
 
 	self.activeDonationFrames = {
@@ -24,9 +36,12 @@ function DonationFrameManager.new(largeDonationContainer, standardDonationContai
 	return self
 end
 
-function DonationFrameManager:removeFromTracking(frame, frameType)
+--[[
+	Removes a frame from the tracking list.
+]]
+function DonationFrameManager:removeFromTracking(frame: Frame, frameType: string)
 	local list = self.activeDonationFrames[frameType]
-	for i, tracked in list do
+	for i, tracked in pairs(list) do
 		if tracked == frame then
 			table.remove(list, i)
 			break
@@ -34,21 +49,27 @@ function DonationFrameManager:removeFromTracking(frame, frameType)
 	end
 end
 
-local function destroyOldestFrame(trackingList)
+local function destroyOldestFrame(trackingList: { Frame })
 	local oldestFrame = table.remove(trackingList, 1)
 	if oldestFrame and oldestFrame.Parent ~= nil then
 		oldestFrame:Destroy()
 	end
 end
 
-function DonationFrameManager:enforceLimit(frameType, maxFrames)
+--[[
+	Enforces frame count limits.
+]]
+function DonationFrameManager:enforceLimit(frameType: string, maxFrames: number)
 	local list = self.activeDonationFrames[frameType]
 	while #list >= maxFrames do
 		destroyOldestFrame(list)
 	end
 end
 
-function DonationFrameManager:adjustLayoutOrdering(donationDisplayType)
+--[[
+	Adjusts layout ordering for frames.
+]]
+function DonationFrameManager:adjustLayoutOrdering(donationDisplayType: string)
 	local targetDisplayFrame = if donationDisplayType == "Large"
 		then self.largeDonationContainer
 		else self.standardDonationContainer
@@ -57,14 +78,17 @@ function DonationFrameManager:adjustLayoutOrdering(donationDisplayType)
 		else STANDARD_FRAME_LAYOUT_MODIFIER
 
 	local children = targetDisplayFrame:GetChildren()
-	for _, donationFrame in children do
+	for _, donationFrame in pairs(children) do
 		if donationFrame:IsA("CanvasGroup") then
 			donationFrame.LayoutOrder += layoutOrderModifier
 		end
 	end
 end
 
-function DonationFrameManager:scheduleCleanup(frame, frameType, delaySeconds)
+--[[
+	Schedules cleanup of a frame after delay.
+]]
+function DonationFrameManager:scheduleCleanup(frame: Frame, frameType: string, delaySeconds: number)
 	task.delay(delaySeconds, function()
 		self:removeFromTracking(frame, frameType)
 		if frame and frame.Parent ~= nil then
@@ -73,26 +97,44 @@ function DonationFrameManager:scheduleCleanup(frame, frameType, delaySeconds)
 	end)
 end
 
-function DonationFrameManager:addLargeFrame(frame)
+--[[
+	Adds a frame to large frames tracking.
+]]
+function DonationFrameManager:addLargeFrame(frame: Frame)
 	table.insert(self.activeDonationFrames.large, frame)
 end
 
-function DonationFrameManager:addStandardFrame(frame)
+--[[
+	Adds a frame to standard frames tracking.
+]]
+function DonationFrameManager:addStandardFrame(frame: Frame)
 	table.insert(self.activeDonationFrames.standard, frame)
 end
 
-function DonationFrameManager:getLargeContainer()
+--[[
+	Gets the large donation container.
+]]
+function DonationFrameManager:getLargeContainer(): Frame
 	return self.largeDonationContainer
 end
 
-function DonationFrameManager:getStandardContainer()
+--[[
+	Gets the standard donation container.
+]]
+function DonationFrameManager:getStandardContainer(): Frame
 	return self.standardDonationContainer
 end
 
-function DonationFrameManager.getMaxLimits()
+--[[
+	Gets maximum frame limits.
+]]
+function DonationFrameManager.getMaxLimits(): (number, number)
 	return MAX_LARGE_FRAMES, MAX_STANDARD_FRAMES
 end
 
+--[[
+	Performs cleanup of orphaned frames.
+]]
 function DonationFrameManager:performCleanup()
 	if self.isShuttingDown then
 		return
@@ -117,6 +159,9 @@ function DonationFrameManager:performCleanup()
 	end
 end
 
+--[[
+	Starts the periodic cleanup loop.
+]]
 function DonationFrameManager:startCleanupLoop()
 	if self.cleanupThread then
 		return
@@ -130,6 +175,9 @@ function DonationFrameManager:startCleanupLoop()
 	end)
 end
 
+--[[
+	Stops the cleanup loop.
+]]
 function DonationFrameManager:stopCleanupLoop()
 	if self.cleanupThread then
 		task.cancel(self.cleanupThread)
@@ -137,13 +185,16 @@ function DonationFrameManager:stopCleanupLoop()
 	end
 end
 
+--[[
+	Destroys all tracked frames.
+]]
 function DonationFrameManager:destroyAll()
-	for _, frame in self.activeDonationFrames.large do
+	for _, frame in pairs(self.activeDonationFrames.large) do
 		if frame and frame.Parent ~= nil then
 			frame:Destroy()
 		end
 	end
-	for _, frame in self.activeDonationFrames.standard do
+	for _, frame in pairs(self.activeDonationFrames.standard) do
 		if frame and frame.Parent ~= nil then
 			frame:Destroy()
 		end
@@ -152,6 +203,9 @@ function DonationFrameManager:destroyAll()
 	table.clear(self.activeDonationFrames.standard)
 end
 
+--[[
+	Shuts down the manager.
+]]
 function DonationFrameManager:shutdown()
 	self.isShuttingDown = true
 	self:stopCleanupLoop()

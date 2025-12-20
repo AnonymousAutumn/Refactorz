@@ -1,19 +1,17 @@
------------------
--- Init Module --
------------------
+--[[
+	PlayerData - Main module for player statistics management.
+
+	Features:
+	- Automatic saving at intervals (every 5 minutes)
+	- Graceful shutdown with data persistence
+	- Cross-server synchronization
+	- Statistics caching and debounced saves
+]]
 
 local PlayerData = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
@@ -22,34 +20,21 @@ local DataStore = require(script.DataStore)
 local CrossServerMessaging = require(script.CrossServerMessaging)
 local StatisticsAPI = require(script.StatisticsAPI)
 
----------------
--- Constants --
----------------
-
 local AUTO_SAVE_INTERVAL_SECONDS = 300
 local ENABLE_AUTO_SAVE = true
 local SHUTDOWN_SAVE_WAIT_SECONDS = 1
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 
-local autoSaveThread = nil
+local autoSaveThread: thread? = nil
 local isShuttingDown = false
 
----------------
--- Functions --
----------------
-
-local function trackConnection(connection)
+local function trackConnection(connection: RBXScriptConnection): RBXScriptConnection
 	connectionsMaid:add(connection)
-	
 	return connection
 end
 
-local function cancelThread(threadHandle)
+local function cancelThread(threadHandle: thread?)
 	if threadHandle and coroutine.status(threadHandle) ~= "dead" then
 		task.cancel(threadHandle)
 	end
@@ -63,7 +48,7 @@ local function performAutoSave()
 	local saveCount = 0
 	local failCount = 0
 
-	for playerUserId, playerStatisticsData in DataCache.getAllCachedData() do
+	for playerUserId, playerStatisticsData in pairs(DataCache.getAllCachedData()) do
 		local success = DataStore.savePlayerStatistics(playerUserId, playerStatisticsData)
 		if success then
 			saveCount += 1
@@ -93,29 +78,47 @@ local function stopAutoSaveLoop()
 	autoSaveThread = nil
 end
 
-function PlayerData:GetOrCreatePlayerStatisticsData(playerUserId)
+--[[
+	Loads or creates player statistics data from the DataStore.
+]]
+function PlayerData:GetOrCreatePlayerStatisticsData(playerUserId: number): any
 	local playerUserIdString = tostring(playerUserId)
-	
 	return DataStore.loadPlayerStatistics(playerUserIdString)
 end
 
-function PlayerData:UpdatePlayerStatisticAndPublishChanges(playerUserId, statisticName, statisticAmount, shouldSetAbsoluteValue, isRemoteUpdate)
+--[[
+	Updates a player statistic and publishes changes across servers.
+]]
+function PlayerData:UpdatePlayerStatisticAndPublishChanges(playerUserId: string | number, statisticName: string, statisticAmount: number, shouldSetAbsoluteValue: boolean?, isRemoteUpdate: boolean?)
 	StatisticsAPI.updatePlayerStatistic(playerUserId, statisticName, statisticAmount, shouldSetAbsoluteValue, isRemoteUpdate)
 end
 
-function PlayerData:IncrementPlayerStatistic(playerUserId, statisticName, incrementAmount, isRemoteUpdate)
+--[[
+	Increments a player statistic by the given amount.
+]]
+function PlayerData:IncrementPlayerStatistic(playerUserId: string | number, statisticName: string, incrementAmount: number, isRemoteUpdate: boolean?)
 	StatisticsAPI.incrementPlayerStatistic(playerUserId, statisticName, incrementAmount, isRemoteUpdate)
 end
 
-function PlayerData:SetPlayerStatisticAbsoluteValue(playerUserId, statisticName, absoluteValue, isRemoteUpdate)
+--[[
+	Sets a player statistic to an absolute value.
+]]
+function PlayerData:SetPlayerStatisticAbsoluteValue(playerUserId: string | number, statisticName: string, absoluteValue: number, isRemoteUpdate: boolean?)
 	StatisticsAPI.setPlayerStatisticAbsoluteValue(playerUserId, statisticName, absoluteValue, isRemoteUpdate)
 end
 
-function PlayerData:GetPlayerStatisticValue(playerUserId, statisticName)
+--[[
+	Returns the current value of a player statistic.
+]]
+function PlayerData:GetPlayerStatisticValue(playerUserId: string | number, statisticName: string): number
 	return StatisticsAPI.getPlayerStatisticValue(playerUserId, statisticName)
 end
 
-function PlayerData:ProcessReceiptAndIncrementStatistic(playerUserId, purchaseId, statisticName, incrementAmount)
+--[[
+	Processes a purchase receipt and increments the corresponding statistic.
+	Returns (success, newValue, status).
+]]
+function PlayerData:ProcessReceiptAndIncrementStatistic(playerUserId: string | number, purchaseId: string, statisticName: string, incrementAmount: number): (boolean, number?, string)
 	local playerUserIdString = tostring(playerUserId)
 	local playerUserIdNumber = tonumber(playerUserId)
 
@@ -145,23 +148,32 @@ function PlayerData:ProcessReceiptAndIncrementStatistic(playerUserId, purchaseId
 	return success, newStatValue, status
 end
 
-function PlayerData:CachePlayerStatisticsDataInMemory(playerUserId)
+--[[
+	Loads player statistics from DataStore and caches in memory.
+]]
+function PlayerData:CachePlayerStatisticsDataInMemory(playerUserId: number)
 	local playerUserIdString = tostring(playerUserId)
 	local playerStatisticsData = DataStore.loadPlayerStatistics(playerUserIdString)
-	
 	DataCache.setCachedData(playerUserIdString, playerStatisticsData)
 end
 
-function PlayerData:RemovePlayerDataFromCacheAndSave(playerUserId)
+--[[
+	Removes player data from cache (triggers save via removal callback).
+]]
+function PlayerData:RemovePlayerDataFromCacheAndSave(playerUserId: number)
 	local playerUserIdString = tostring(playerUserId)
 	DataCache.removeCacheEntry(playerUserIdString)
 end
 
-function PlayerData:SaveAllCachedData()
+--[[
+	Saves all cached player data to DataStore.
+	Returns (successCount, failCount).
+]]
+function PlayerData:SaveAllCachedData(): (number, number)
 	local successCount = 0
 	local failCount = 0
 
-	for playerUserId, playerStatisticsData in DataCache.getAllCachedData() do
+	for playerUserId, playerStatisticsData in pairs(DataCache.getAllCachedData()) do
 		local success = DataStore.savePlayerStatistics(playerUserId, playerStatisticsData)
 		if success then
 			successCount += 1
@@ -175,16 +187,12 @@ function PlayerData:SaveAllCachedData()
 	return successCount, failCount
 end
 
---------------------
--- Initialization --
---------------------
-
 local function initialize()
 	StatisticsAPI.setDataCacheModule(DataCache)
 	StatisticsAPI.setDataStoreModule(DataStore)
 	StatisticsAPI.setCrossServerMessagingModule(CrossServerMessaging)
 	CrossServerMessaging.subscribe(trackConnection)
-	
+
 	DataCache.setRemovalCallback(function(playerUserId, data)
 		DataStore.savePlayerStatistics(playerUserId, data)
 	end)
@@ -206,7 +214,7 @@ local function bindToClose()
 	CrossServerMessaging.cleanup()
 
 	local cacheSize = 0
-	for _ in DataCache.getAllCachedData() do
+	for _ in pairs(DataCache.getAllCachedData()) do
 		cacheSize += 1
 	end
 
@@ -217,9 +225,5 @@ end
 
 initialize()
 game:BindToClose(bindToClose)
-
--------------------
--- Return Module --
--------------------
 
 return PlayerData

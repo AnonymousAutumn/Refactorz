@@ -1,14 +1,16 @@
---------------
--- Services --
---------------
+--[[
+	DataManager - Orchestrates player data loading, leaderboard creation, and cross-server sync.
+
+	Features:
+	- Player initialization with timeout protection
+	- Leaderboard creation on player join
+	- Cross-server leaderboard updates
+	- Graceful shutdown with data persistence
+]]
 
 local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local bindableEvents = networkFolder.Bindables.Events
@@ -27,10 +29,6 @@ local LeaderboardBuilder = require(script.LeaderboardBuilder)
 local InitStateTracker = require(script.InitStateTracker)
 local CrossServerSync = require(script.CrossServerSync)
 
----------------
--- Constants --
----------------
-
 local PLAYER_INIT_TIMEOUT = 30
 local INIT_STATE_CLEANUP_DELAY = 60
 local UI_UPDATE_STATISTIC = "Raised"
@@ -41,28 +39,20 @@ local KICK_MESSAGES = {
 	INIT_TIMEOUT = "Data initialization timed out. Please rejoin.",
 }
 
----------------
--- Variables --
----------------
-
 local initTracker = InitStateTracker.new()
 local crossServerSync = CrossServerSync.new()
 local connectionsMaid = Connections.new()
 
-local orderedDataStoreRegistry = {}
+local orderedDataStoreRegistry: { [string]: OrderedDataStore } = {}
 local isShuttingDown = false
 
----------------
--- Functions --
----------------
-
-local function safeKick(player, message)
+local function safeKick(player: Player, message: string)
 	if ValidationUtils.isValidPlayer(player) then
 		player:Kick(message)
 	end
 end
 
-local function initializeDataStoreRegistry()
+local function initializeDataStoreRegistry(): boolean
 	local success, errorMessage = pcall(function()
 		orderedDataStoreRegistry = {
 			Wins = DataStoreService:GetOrderedDataStore(GameConfig.DATASTORE.WINS_ORDERED_KEY),
@@ -78,7 +68,7 @@ local function initializeDataStoreRegistry()
 	return success
 end
 
-local function triggerUIRefresh(player)
+local function triggerUIRefresh(player: Player)
 	if not ValidationUtils.isValidPlayer(player) then
 		return
 	end
@@ -92,7 +82,7 @@ local function triggerUIRefresh(player)
 	end
 end
 
-local function updatePlayerStatisticDisplay(targetPlayer, statisticName, updatedValue)
+local function updatePlayerStatisticDisplay(targetPlayer: Player, statisticName: string, updatedValue: number)
 	local leaderboardFolder = LeaderboardBuilder.getLeaderstatsFolder(targetPlayer)
 	if not leaderboardFolder then
 		warn(`[{script.Name}] No leaderboard display found for player {targetPlayer.Name} (UserId: {targetPlayer.UserId})`)
@@ -116,7 +106,7 @@ local function updatePlayerStatisticDisplay(targetPlayer, statisticName, updated
 	end
 end
 
-local function processLeaderboardUpdate(crossServerMessage)
+local function processLeaderboardUpdate(crossServerMessage: any)
 	if isShuttingDown then
 		return
 	end
@@ -136,11 +126,11 @@ local function processLeaderboardUpdate(crossServerMessage)
 	end
 end
 
-local function loadPlayerStatisticsData(playerUserId)
+local function loadPlayerStatisticsData(playerUserId: number)
 	PlayerData:GetOrCreatePlayerStatisticsData(playerUserId)
 end
 
-local function createPlayerLeaderboard(player)
+local function createPlayerLeaderboard(player: Player)
 	local leaderboardCreated = LeaderboardBuilder.createLeaderboard(player)
 
 	if not leaderboardCreated then
@@ -148,7 +138,7 @@ local function createPlayerLeaderboard(player)
 	end
 end
 
-local function handleFailedInit(player, errorMessage)
+local function handleFailedInit(player: Player, errorMessage: string)
 	warn(`[PlayerStatisticsManager] Error initializing player statistics for {player.Name} (UserId: {player.UserId}): {tostring(errorMessage)}`)
 
 	if ValidationUtils.isValidPlayer(player) then
@@ -156,7 +146,7 @@ local function handleFailedInit(player, errorMessage)
 	end
 end
 
-local function handleInitTimeout(initState)
+local function handleInitTimeout(initState: InitStateTracker.InitState)
 	if isShuttingDown or not ValidationUtils.isValidPlayer(initState.player) then
 		return
 	end
@@ -165,7 +155,7 @@ local function handleInitTimeout(initState)
 	safeKick(initState.player, KICK_MESSAGES.INIT_TIMEOUT)
 end
 
-local function initializePlayerStatistics(connectingPlayer)
+local function initializePlayerStatistics(connectingPlayer: Player)
 	if not ValidationUtils.isValidPlayer(connectingPlayer) or isShuttingDown then
 		return
 	end
@@ -186,7 +176,7 @@ local function initializePlayerStatistics(connectingPlayer)
 	initTracker:scheduleCleanup(connectingPlayer.UserId, INIT_STATE_CLEANUP_DELAY)
 end
 
-local function handlePlayerConnection(connectingPlayer)
+local function handlePlayerConnection(connectingPlayer: Player)
 	if isShuttingDown then
 		return
 	end
@@ -195,7 +185,7 @@ local function handlePlayerConnection(connectingPlayer)
 	end)
 end
 
-local function cleanupPlayerStatistics(player)
+local function cleanupPlayerStatistics(player: Player)
 	local success, errorMessage = pcall(function()
 		PlayerData:RemovePlayerDataFromCacheAndSave(player.UserId)
 	end)
@@ -204,18 +194,18 @@ local function cleanupPlayerStatistics(player)
 	end
 end
 
-local function handlePlayerDisconnection(disconnectingPlayer)
+local function handlePlayerDisconnection(disconnectingPlayer: Player)
 	cleanupPlayerStatistics(disconnectingPlayer)
 end
 
 local function initializeExistingPlayers()
-	for _, existingPlayer in Players:GetPlayers() do
+	for _, existingPlayer in pairs(Players:GetPlayers()) do
 		task.spawn(handlePlayerConnection, existingPlayer)
 	end
 end
 
 local function saveAllPlayerStatistics()
-	for _, player in Players:GetPlayers() do
+	for _, player in pairs(Players:GetPlayers()) do
 		pcall(function()
 			PlayerData:RemovePlayerDataFromCacheAndSave(player.UserId)
 		end)
@@ -250,9 +240,5 @@ local function initialize()
 
 	game:BindToClose(bindToClose)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

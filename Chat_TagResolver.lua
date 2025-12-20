@@ -1,28 +1,24 @@
------------------
--- Init Module --
------------------
+--[[
+	TagResolver - Resolves chat tags based on player roles.
+
+	Features:
+	- Server message tags
+	- Creator/Tester tag detection
+	- UIGradient-based tag colors
+]]
 
 local TagResolver = {}
-
---------------
--- Services --
---------------
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-----------------
--- References --
-----------------
-
 local configurationFolder = ReplicatedStorage.Configuration
 local tagConfig = configurationFolder.TagConfig
 
----------------
--- Functions --
----------------
-
-function TagResolver.getChatTagProperties(message)
+--[[
+	Gets chat tag properties for a message based on sender role.
+]]
+function TagResolver.getChatTagProperties(message: TextChatMessage): (UIGradient?, string?)
 	if not message.TextSource and message.Metadata ~= "Global" then
 		local tag = tagConfig.Server 
 		return tag.UIGradient , tag.Tag.Value
@@ -46,9 +42,5 @@ function TagResolver.getChatTagProperties(message)
 
 	return nil, nil
 end
-
--------------------
--- Return Module --
--------------------
 
 return TagResolver

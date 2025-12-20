@@ -1,33 +1,22 @@
------------------
--- Init Module --
------------------
+--[[
+	StateManager - Manages leaderboard state per instance.
+
+	Features:
+	- State initialization and cleanup
+	- Connection tracking per leaderboard
+	- Update count tracking
+]]
 
 local StateManager = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
 
----------------
--- Variables --
----------------
-
 local leaderboardStates = {}
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func)
+local function safeExecute(func: () -> ()): boolean
 	local success, errorMessage = pcall(func)
 	if not success then
 		warn("Error in StateManager.safeExecute:", errorMessage)
@@ -35,7 +24,10 @@ local function safeExecute(func)
 	return success
 end
 
-function StateManager.initializeState(leaderboardName)
+--[[
+	Initializes or returns existing state for a leaderboard.
+]]
+function StateManager.initializeState(leaderboardName: string): any
 	if not leaderboardStates[leaderboardName] then
 		leaderboardStates[leaderboardName] = {
 			handler = nil,
@@ -48,11 +40,17 @@ function StateManager.initializeState(leaderboardName)
 	return leaderboardStates[leaderboardName]
 end
 
-function StateManager.getState(leaderboardName)
+--[[
+	Returns the state for a leaderboard.
+]]
+function StateManager.getState(leaderboardName: string): any?
 	return leaderboardStates[leaderboardName]
 end
 
-function StateManager.cleanup(leaderboardName)
+--[[
+	Cleans up a specific leaderboard state.
+]]
+function StateManager.cleanup(leaderboardName: string)
 	local state = leaderboardStates[leaderboardName]
 	if not state then
 		return
@@ -69,19 +67,21 @@ function StateManager.cleanup(leaderboardName)
 	leaderboardStates[leaderboardName] = nil
 end
 
+--[[
+	Cleans up all leaderboard states.
+]]
 function StateManager.cleanupAll()
-	for leaderboardName, _ in leaderboardStates do
+	for leaderboardName, _ in pairs(leaderboardStates) do
 		StateManager.cleanup(leaderboardName)
 	end
 end
 
-function StateManager.updateState(state)
+--[[
+	Updates a leaderboard state with new update info.
+]]
+function StateManager.updateState(state: any)
 	state.updateCount = state.updateCount + 1
 	state.lastUpdateTime = os.time()
 end
-
--------------------
--- Return Module --
--------------------
 
 return StateManager

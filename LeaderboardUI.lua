@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	LeaderboardUI - Client-side leaderboard display system.
+
+	Features:
+	- Multiple leaderboard initialization
+	- Toggle button and scrolling frame setup
+	- Automatic cleanup on player leave
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -20,24 +21,12 @@ local ComponentFinder = require(script.ComponentFinder)
 local UIController = require(script.UIController)
 local UpdateHandler = require(script.UpdateHandler)
 
----------------
--- Constants --
----------------
-
 local MAX_INIT_RETRIES = 1
 local INIT_RETRY_DELAY = 2
 
----------------
--- Variables --
----------------
-
 local connectionsMaid = Connections.new()
 
----------------
--- Functions --
----------------
-
-local function safeExecute(func)
+local function safeExecute(func: () -> ()): boolean
 	local success, errorMessage = pcall(func)
 	if not success then
 		warn(`[{script.Name}] Error:", errorMessage`)
@@ -46,7 +35,7 @@ local function safeExecute(func)
 	return success
 end
 
-local function performLeaderboardInitialization(leaderboardSurfaceGui, state)
+local function performLeaderboardInitialization(leaderboardSurfaceGui: SurfaceGui, state: any): boolean
 	local leaderboardName = leaderboardSurfaceGui.Name
 
 	local clientLeaderboardHandler = leaderboardDisplayHandler.new(leaderboardSurfaceGui)
@@ -85,7 +74,7 @@ local function performLeaderboardInitialization(leaderboardSurfaceGui, state)
 	return true
 end
 
-local function initializeLeaderboardInterface(leaderboardSurfaceGui)
+local function initializeLeaderboardInterface(leaderboardSurfaceGui: SurfaceGui?): boolean
 	if not leaderboardSurfaceGui then
 		return false
 	end
@@ -116,8 +105,8 @@ local function initializeLeaderboardInterface(leaderboardSurfaceGui)
 	return false
 end
 
-local function initializeAllLeaderboards(screenGui)
-	for i, leaderboardInstance in screenGui:GetChildren() do
+local function initializeAllLeaderboards(screenGui: ScreenGui)
+	for _, leaderboardInstance in pairs(screenGui:GetChildren()) do
 		if leaderboardInstance:IsA("SurfaceGui") then
 			safeExecute(function()
 				initializeLeaderboardInterface(leaderboardInstance)
@@ -156,9 +145,5 @@ local function initialize()
 		end)
 	)
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

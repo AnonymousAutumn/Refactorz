@@ -1,19 +1,26 @@
------------------
--- Init Module --
------------------
+--[[
+	UIElementFinder - Locates leaderboard UI elements in workspace.
+
+	Features:
+	- Surface GUI detection
+	- Frame hierarchy traversal
+	- UI element validation
+]]
 
 local UIElementFinder = {}
 UIElementFinder.leaderboardsContainer = nil
 
----------------
--- Functions --
----------------
-
-function UIElementFinder.getLeaderboardUIElement(parent, elementName)
+--[[
+	Finds a child UI element by name.
+]]
+function UIElementFinder.getLeaderboardUIElement(parent: Instance, elementName: string): Instance?
 	return parent:FindFirstChild(elementName)
 end
 
-function UIElementFinder.getLeaderboardUIElements(leaderboardConfig)
+--[[
+	Finds leaderboard scrolling frame from configuration.
+]]
+function UIElementFinder.getLeaderboardUIElements(leaderboardConfig: any): ScrollingFrame?
 	if not UIElementFinder.leaderboardsContainer then
 		warn(`[{script.Name}] Leaderboards container not set`)
 		return nil
@@ -41,9 +48,5 @@ function UIElementFinder.getLeaderboardUIElements(leaderboardConfig)
 
 	return leaderboardScrollingFrame
 end
-
--------------------
--- Return Module --
--------------------
 
 return UIElementFinder

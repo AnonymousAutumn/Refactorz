@@ -1,31 +1,28 @@
------------------
--- Init Module --
------------------
+--[[
+	DataExtractor - Extracts leaderboard data from DataStore pages.
+
+	Features:
+	- Page iteration with safety limits
+	- Entry validation
+	- Multi-page data extraction
+]]
 
 local DataExtractor = {}
 
----------------
--- Constants --
----------------
-
 local MAX_PAGE_ITERATIONS = 100
 
----------------
--- Functions --
----------------
-
-local function isValidLeaderboardEntry(entry)
+local function isValidLeaderboardEntry(entry: any): boolean
 	return type(entry) == "table" and entry.key ~= nil and entry.value ~= nil
 end
 
-local function extractEntriesFromPage(currentPageData, extractedEntries, maximumEntryCount)
+local function extractEntriesFromPage(currentPageData: { any }, extractedEntries: { any }, maximumEntryCount: number): boolean
 	if type(currentPageData) ~= "table" then
 		warn(`[{script.Name}] Current page data is not a table`)
 		
 		return false
 	end
 	
-	for _, entryData in currentPageData do
+	for _, entryData in pairs(currentPageData) do
 		if isValidLeaderboardEntry(entryData) then
 			table.insert(extractedEntries, entryData)
 			
@@ -37,7 +34,7 @@ local function extractEntriesFromPage(currentPageData, extractedEntries, maximum
 	return false
 end
 
-local function getCurrentPage(dataStorePages)
+local function getCurrentPage(dataStorePages: any): (boolean, { any }?)
 	local success, currentPageData = pcall(function()
 		return dataStorePages:GetCurrentPage()
 	end)
@@ -48,7 +45,7 @@ local function getCurrentPage(dataStorePages)
 	return true, currentPageData
 end
 
-local function advanceToNextPage(dataStorePages)
+local function advanceToNextPage(dataStorePages: any): boolean
 	local advanceSuccess, advanceError = pcall(function()
 		dataStorePages:AdvanceToNextPageAsync()
 	end)
@@ -59,7 +56,10 @@ local function advanceToNextPage(dataStorePages)
 	return true
 end
 
-function DataExtractor.extractFromPages(dataStorePages, maximumEntryCount)
+--[[
+	Extracts entries from DataStore pages up to maximum count.
+]]
+function DataExtractor.extractFromPages(dataStorePages: any, maximumEntryCount: number): { any }
 	local extractedEntries = {}
 	local pageIterations = 0
 
@@ -87,9 +87,5 @@ function DataExtractor.extractFromPages(dataStorePages, maximumEntryCount)
 
 	return extractedEntries
 end
-
--------------------
--- Return Module --
--------------------
 
 return DataExtractor

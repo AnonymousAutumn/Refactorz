@@ -1,18 +1,15 @@
------------------
--- Init Module --
------------------
+--[[
+	Populater - Populates leaderboard display frames with player data.
+
+	Features:
+	- Leaderboard entry creation
+	- Player data display
+	- Rank color styling
+]]
 
 local Populater = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
@@ -23,11 +20,7 @@ local ColorStyler = require(script.ColorStyler)
 local PlayerRenderer = require(script.PlayerRenderer)
 local DataExtractor = require(script.DataExtractor)
 
----------------
--- Functions --
----------------
-
-local function setupRankDisplay(frame, rankPosition)
+local function setupRankDisplay(frame: Frame, rankPosition: number)
 	if not FrameValidator.validateStructure(frame) then
 		return
 	end
@@ -41,7 +34,7 @@ local function setupRankDisplay(frame, rankPosition)
 	end
 end
 
-local function applyRankColor(frame, rankPosition, rankColorConfiguration)
+local function applyRankColor(frame: Frame, rankPosition: number, rankColorConfiguration: any)
 	if not FrameValidator.validateStructure(frame) then
 		return
 	end
@@ -76,7 +69,7 @@ local function applyRankColor(frame, rankPosition, rankColorConfiguration)
 	ColorStyler.applyStrokeToLabels(labels, rankColor.STROKECOLOR)
 end
 
-local function setupPlayerDisplay(frame, playerUserId, config)
+local function setupPlayerDisplay(frame: Frame, playerUserId: number?, config: any)
 	if not FrameValidator.validateStructure(frame) then
 		return
 	end
@@ -95,7 +88,7 @@ local function setupPlayerDisplay(frame, playerUserId, config)
 	end
 end
 
-local function setupStatisticDisplay(frame, statisticValue, config)
+local function setupStatisticDisplay(frame: Frame, statisticValue: number?, config: any)
 	local amountFrame = FrameValidator.getAmountFrame(frame)
 	local statisticLabel = FrameValidator.getChild(amountFrame, "StatisticLabel")
 
@@ -106,7 +99,10 @@ local function setupStatisticDisplay(frame, statisticValue, config)
 	statisticLabel.Text = DisplayFormatter.formatStatistic(statisticValue, config)
 end
 
-function Populater.createLeaderboardEntryFrame(rankPosition, frameTemplate, parentContainer, rankColorConfiguration, fadeInAnimationDuration)
+--[[
+	Creates a new leaderboard entry frame.
+]]
+function Populater.createLeaderboardEntryFrame(rankPosition: number, frameTemplate: Frame, parentContainer: ScrollingFrame, rankColorConfiguration: any, fadeInAnimationDuration: number): Frame
 	local newFrame = frameTemplate:Clone()
 	newFrame.LayoutOrder = rankPosition
 	newFrame.Visible = false
@@ -118,7 +114,10 @@ function Populater.createLeaderboardEntryFrame(rankPosition, frameTemplate, pare
 	return newFrame
 end
 
-function Populater.populateLeaderboardEntryDataAsync(targetFrame, playerUserId, playerStatisticValue, displayConfiguration)
+--[[
+	Populates a leaderboard entry frame with player data.
+]]
+function Populater.populateLeaderboardEntryDataAsync(targetFrame: Frame, playerUserId: number?, playerStatisticValue: number?, displayConfiguration: any)
 	if not ValidationUtils.isValidFrame(targetFrame) then
 		return
 	end
@@ -128,11 +127,17 @@ function Populater.populateLeaderboardEntryDataAsync(targetFrame, playerUserId, 
 	targetFrame.Visible = true
 end
 
-function Populater.extractLeaderboardDataFromPages(dataStorePages, maximumEntryCount)
+--[[
+	Extracts leaderboard entries from DataStore pages.
+]]
+function Populater.extractLeaderboardDataFromPages(dataStorePages: any, maximumEntryCount: number): { any }
 	return DataExtractor.extractFromPages(dataStorePages, maximumEntryCount)
 end
 
-function Populater.refreshAllLeaderboardDisplayFrames(leaderboardFrames, leaderboardData, systemConfiguration)
+--[[
+	Refreshes all leaderboard display frames with new data.
+]]
+function Populater.refreshAllLeaderboardDisplayFrames(leaderboardFrames: { Frame }, leaderboardData: { any }, systemConfiguration: any)
 	local displayCount = systemConfiguration.LEADERBOARD_CONFIG.DISPLAY_COUNT
 	for frameIndex = 1, displayCount do
 		local entryData = leaderboardData[frameIndex]
@@ -155,12 +160,11 @@ function Populater.refreshAllLeaderboardDisplayFrames(leaderboardFrames, leaderb
 	end
 end
 
+--[[
+	Clears the username cache.
+]]
 function Populater.clearUsernameCache()
 	UsernameCache.clearCache()
 end
-
--------------------
--- Return Module --
--------------------
 
 return Populater

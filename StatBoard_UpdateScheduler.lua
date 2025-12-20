@@ -1,29 +1,22 @@
------------------
--- Init Module --
------------------
+--[[
+	UpdateScheduler - Schedules leaderboard data refresh cycles.
+
+	Features:
+	- Periodic update scheduling
+	- Exponential backoff on failures
+	- Client ready event handling
+]]
 
 local UpdateScheduler = {}
 UpdateScheduler.refreshLeaderboardDataAsync = nil
 UpdateScheduler.trackThread = nil
 UpdateScheduler.isShuttingDown = false
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-----------------
--- References --
-----------------
-
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-
----------------
--- Constants --
----------------
 
 local INITIAL_UPDATE_DELAY = 5
 local FAILURE_BACKOFF_MULTIPLIER = 2
@@ -32,11 +25,10 @@ local MAX_CONSECUTIVE_FAILURES = 5
 
 local CLIENT_READY_MESSAGE = "Ready"
 
----------------
--- Functions --
----------------
-
-function UpdateScheduler.updateLeaderboardState(leaderboardState, success)
+--[[
+	Updates leaderboard state after refresh attempt.
+]]
+function UpdateScheduler.updateLeaderboardState(leaderboardState: any, success: boolean)
 	if success then
 		leaderboardState.consecutiveFailures = 0
 		leaderboardState.lastUpdateTime = os.time()
@@ -47,11 +39,17 @@ function UpdateScheduler.updateLeaderboardState(leaderboardState, success)
 	end
 end
 
-function UpdateScheduler.calculateBackoffMultiplier(consecutiveFailures)
+--[[
+	Calculates exponential backoff multiplier based on failures.
+]]
+function UpdateScheduler.calculateBackoffMultiplier(consecutiveFailures: number): number
 	return math.min(FAILURE_BACKOFF_MULTIPLIER ^ consecutiveFailures, MAX_BACKOFF_MULTIPLIER)
 end
 
-function UpdateScheduler.calculateUpdateInterval(leaderboardState)
+--[[
+	Calculates next update interval with backoff.
+]]
+function UpdateScheduler.calculateUpdateInterval(leaderboardState: any): number
 	local baseInterval = leaderboardState.systemConfig.LEADERBOARD_CONFIG.UPDATE_INTERVAL
 	if leaderboardState.consecutiveFailures > 0 then
 		local backoffMultiplier = UpdateScheduler.calculateBackoffMultiplier(leaderboardState.consecutiveFailures)
@@ -60,13 +58,19 @@ function UpdateScheduler.calculateUpdateInterval(leaderboardState)
 	return baseInterval
 end
 
-function UpdateScheduler.logBackoffWarning(leaderboardState, updateInterval)
+--[[
+	Logs warning when in backoff state.
+]]
+function UpdateScheduler.logBackoffWarning(leaderboardState: any, updateInterval: number)
 	if leaderboardState.consecutiveFailures > 0 then
 		warn(`[{script.Name}] {leaderboardState.config.statisticName} failed {leaderboardState.consecutiveFailures} times in a row; next update in {updateInterval}s`)
 	end
 end
 
-function UpdateScheduler.setupLeaderboardUpdateLoop(leaderboardState)
+--[[
+	Sets up periodic update loop for a leaderboard.
+]]
+function UpdateScheduler.setupLeaderboardUpdateLoop(leaderboardState: any)
 	if not UpdateScheduler.refreshLeaderboardDataAsync or not UpdateScheduler.trackThread then
 		warn(`[{script.Name}] Dependencies not set`)
 		return
@@ -89,11 +93,17 @@ function UpdateScheduler.setupLeaderboardUpdateLoop(leaderboardState)
 	UpdateScheduler.trackThread(updateThread)
 end
 
-function UpdateScheduler.isValidClientReadyMessage(message)
+--[[
+	Validates client ready message format.
+]]
+function UpdateScheduler.isValidClientReadyMessage(message: any): boolean
 	return type(message) == "string" and message == CLIENT_READY_MESSAGE
 end
 
-function UpdateScheduler.handleClientReadyEvent(requestingPlayer, clientMessage, leaderboardState)
+--[[
+	Handles client ready events to trigger immediate refresh.
+]]
+function UpdateScheduler.handleClientReadyEvent(requestingPlayer: Player, clientMessage: any, leaderboardState: any)
 	if UpdateScheduler.isShuttingDown then
 		return
 	end
@@ -112,9 +122,5 @@ function UpdateScheduler.handleClientReadyEvent(requestingPlayer, clientMessage,
 		UpdateScheduler.refreshLeaderboardDataAsync(leaderboardState)
 	end)
 end
-
--------------------
--- Return Module --
--------------------
 
 return UpdateScheduler

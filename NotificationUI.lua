@@ -1,13 +1,14 @@
---------------
--- Services --
---------------
+--[[
+	NotificationUI - Client-side notification display system.
+
+	Features:
+	- Notification queue management
+	- Entry/exit animations
+	- Type-based color coding
+]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-----------------
--- References --
-----------------
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -28,10 +29,6 @@ local SoundManager = require(script.SoundManager)
 local instancesFolder = ReplicatedStorage.Instances
 local notificationTemplate = instancesFolder.GuiPrefabs.NotificationPrefab
 
----------------
--- Constants --
----------------
-
 local NOTIFICATION_COLORS = {
 	Success = Color3.fromRGB(0, 255, 0),
 	Warning = Color3.fromRGB(255, 255, 0),
@@ -41,24 +38,16 @@ local NOTIFICATION_COLORS = {
 local COMPONENT_TEXT_LABEL = "TextLabel"
 local COMPONENT_UI_STROKE = "UIStroke"
 
----------------
--- Variables --
----------------
-
 local notificationQueueMaid = NotificationQueue.new()
 local connectionsMaid = Connections.new()
 
 local notificationContainer = nil
 
----------------
--- Functions --
----------------
-
-local function isValidNotificationType(notificationType)
+local function isValidNotificationType(notificationType: string): boolean
 	return NOTIFICATION_COLORS[notificationType] ~= nil
 end
 
-local function safeExecute(func, errorMessage)
+local function safeExecute(func: () -> (), errorMessage: string): boolean
 	local success, errorDetails = pcall(func)
 	if not success then
 		warn(`[{script.Name}] {errorMessage}: {tostring(errorDetails)}`)
@@ -67,20 +56,20 @@ local function safeExecute(func, errorMessage)
 	return true
 end
 
-local function getUIStroke(frame)
+local function getUIStroke(frame: Frame): UIStroke?
 	local uiStroke = frame:FindFirstChild(COMPONENT_UI_STROKE)
-	return if ValidationUtils.isValidUIStroke(uiStroke) then uiStroke  else nil
+	return if ValidationUtils.isValidUIStroke(uiStroke) then uiStroke else nil
 end
 
-local function getTextLabel(frame)
+local function getTextLabel(frame: Frame): TextLabel?
 	return frame:FindFirstChild(COMPONENT_TEXT_LABEL)
 end
 
-local function isFrameInContainer(frame)
+local function isFrameInContainer(frame: Frame?): boolean
 	return frame and frame:IsDescendantOf(notificationContainer)
 end
 
-local function repositionSingleNotification(frame, index)
+local function repositionSingleNotification(frame: Frame, index: number)
 	if not isFrameInContainer(frame) then
 		return
 	end
@@ -93,12 +82,12 @@ local function repositionSingleNotification(frame, index)
 end
 
 local function repositionNotifications()
-	for index, frame in notificationQueueMaid:getAll() do
+	for index, frame in pairs(notificationQueueMaid:getAll()) do
 		repositionSingleNotification(frame, index)
 	end
 end
 
-local function destroyNotificationFrame(frame)
+local function destroyNotificationFrame(frame: Frame)
 	safeExecute(function()
 		if frame.Parent then
 			frame:Destroy()
@@ -106,7 +95,7 @@ local function destroyNotificationFrame(frame)
 	end, "Error destroying notification frame")
 end
 
-local function handleNotificationRemoval(frame, textLabel)
+local function handleNotificationRemoval(frame: Frame, textLabel: TextLabel)
 	NotificationAnimator.animateExit(frame, textLabel)
 
 	task.delay(NotificationAnimator.getStandardDuration(), function()
@@ -116,7 +105,7 @@ local function handleNotificationRemoval(frame, textLabel)
 	end)
 end
 
-local function validateNotificationParams(message, notificationType)
+local function validateNotificationParams(message: string, notificationType: string): boolean
 	if not ValidationUtils.isValidString(message) then
 		warn(`[{script.Name}] Invalid message for notification`)
 		return false
@@ -135,7 +124,7 @@ local function validateNotificationParams(message, notificationType)
 	return true
 end
 
-local function cloneNotificationTemplate()
+local function cloneNotificationTemplate(): Frame?
 	local success, clonedFrame = pcall(function()
 		return notificationTemplate:Clone()
 	end)
@@ -145,10 +134,10 @@ local function cloneNotificationTemplate()
 		return nil
 	end
 
-	return clonedFrame 
+	return clonedFrame
 end
 
-local function createNotification(message, notificationType)
+local function createNotification(message: string, notificationType: string)
 	if not validateNotificationParams(message, notificationType) then
 		return
 	end
@@ -187,7 +176,7 @@ local function createNotification(message, notificationType)
 end
 
 local function destroyAllNotifications()
-	for _, frame in notificationQueueMaid:getAll() do
+	for _, frame in pairs(notificationQueueMaid:getAll()) do
 		destroyNotificationFrame(frame)
 	end
 	notificationQueueMaid:clear()
@@ -228,9 +217,5 @@ local function initialize()
 		end
 	end))
 end
-
---------------------
--- Initialization --
---------------------
 
 initialize()

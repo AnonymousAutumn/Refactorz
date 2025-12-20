@@ -1,19 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	DonationMessaging - Handles cross-server donation messaging.
+
+	Features:
+	- MessagingService publish/subscribe
+	- Large donation broadcasts
+	- Retry logic with exponential backoff
+]]
 
 local DonationMessaging = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MessagingService = game:GetService("MessagingService")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -24,36 +21,24 @@ local GameConfig = require(configurationFolder.GameConfig)
 
 local LARGE_DONATION_BROADCAST_TOPIC = GameConfig.MESSAGING_SERVICE_CONFIG.LARGE_DONATION_TOPIC
 
----------------
--- Constants --
----------------
-
 local MAX_MESSAGING_RETRIES = 3
 local BASE_RETRY_DELAY = 1
 local MESSAGING_TIMEOUT = 5
 
----------------
--- Variables --
----------------
-
 local messagingSubscription = nil
 
----------------
--- Functions --
----------------
-
-local function isValidBroadcastData(data)
+local function isValidBroadcastData(data: any): boolean
 	if typeof(data) ~= "table" then
 		return false
 	end
 	return data.Donor ~= nil and data.Receiver ~= nil and data.Amount ~= nil
 end
 
-local function hasTimedOut(startTime, timeout)
+local function hasTimedOut(startTime: number, timeout: number): boolean
 	return os.clock() - startTime > timeout
 end
 
-local function calculateRetryDelay(attemptNumber)
+local function calculateRetryDelay(attemptNumber: number): number
 	return BASE_RETRY_DELAY * attemptNumber
 end
 
@@ -66,7 +51,7 @@ local function disconnectMessagingSubscription()
 	end
 end
 
-local function publishToMessagingService(topic, messageData)
+local function publishToMessagingService(topic: string, messageData: any): boolean
 	for attempt = 1, MAX_MESSAGING_RETRIES do
 		local startTime = os.clock()
 		local success, result = pcall(function()
@@ -91,7 +76,10 @@ local function publishToMessagingService(topic, messageData)
 	return false
 end
 
-function DonationMessaging.broadcastToMessagingService(broadcastTopic, messageData)
+--[[
+	Broadcasts a message to the MessagingService topic.
+]]
+function DonationMessaging.broadcastToMessagingService(broadcastTopic: string, messageData: any): boolean
 	if not isValidBroadcastData(messageData) then
 		warn(`[{script.Name}] Invalid message data for broadcast`)
 		return false
@@ -100,7 +88,7 @@ function DonationMessaging.broadcastToMessagingService(broadcastTopic, messageDa
 	return publishToMessagingService(broadcastTopic, messageData)
 end
 
-local function processLargeDonationBroadcast(messagingPacket)
+local function processLargeDonationBroadcast(messagingPacket: any)
 	local broadcastData = messagingPacket.Data
 	if not isValidBroadcastData(broadcastData) then
 		warn(`[{script.Name}] Invalid or incomplete broadcast data received`)
@@ -122,6 +110,9 @@ local function processLargeDonationBroadcast(messagingPacket)
 	end
 end
 
+--[[
+	Subscribes to the large donation MessagingService topic.
+]]
 function DonationMessaging.subscribeToMessagingService()
 	local success, subscription = pcall(function()
 		return MessagingService:SubscribeAsync(LARGE_DONATION_BROADCAST_TOPIC, processLargeDonationBroadcast)
@@ -134,12 +125,11 @@ function DonationMessaging.subscribeToMessagingService()
 	end
 end
 
+--[[
+	Cleans up MessagingService subscription.
+]]
 function DonationMessaging.cleanup()
 	disconnectMessagingSubscription()
 end
-
--------------------
--- Return Module --
--------------------
 
 return DonationMessaging

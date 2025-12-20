@@ -1,41 +1,30 @@
------------------
--- Init Module --
------------------
+--[[
+	GiftPersistence - Persists gift data to DataStore.
+
+	Features:
+	- Gift record creation and validation
+	- Gift history retrieval
+	- Gift limit enforcement
+]]
 
 local GiftPersistence = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
-
-----------------
--- References --
-----------------
 
 local modulesFolder = ReplicatedStorage.Modules
 local UsernameCache = require(modulesFolder.Caches.UsernameCache)
 local DataStores = require(modulesFolder.Wrappers.DataStores)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 
----------------
--- Constants --
----------------
-
 local MIN_GIFT_AMOUNT = 1
 local MAX_GIFTS_PER_PLAYER = 100
 
----------------
--- Functions --
----------------
-
-local function isValidGiftAmount(amount)
+local function isValidGiftAmount(amount: number): boolean
 	return ValidationUtils.isValidNumber(amount) and amount >= MIN_GIFT_AMOUNT
 end
 
-local function isValidGiftRecord(record)
+local function isValidGiftRecord(record: any): boolean
 	if typeof(record) ~= "table" then
 		return false
 	end
@@ -45,7 +34,7 @@ local function isValidGiftRecord(record)
 		and typeof(record.id) == "string"
 end
 
-local function constructGiftRecord(donorUserId, giftAmount)
+local function constructGiftRecord(donorUserId: number, giftAmount: number): any?
 	if not ValidationUtils.isValidUserId(donorUserId) or not isValidGiftAmount(giftAmount) then
 		warn(`[{script.Name}] Invalid gift record parameters: donor={tostring(donorUserId)}, amount={tostring(giftAmount)}`)
 		return nil
@@ -59,14 +48,14 @@ local function constructGiftRecord(donorUserId, giftAmount)
 	}
 end
 
-local function validateGiftRecords(records)
+local function validateGiftRecords(records: any): { any }
 	local validRecords = {}
 
 	if type(records) ~= "table" then
 		return validRecords
 	end
 
-	for _, record in records do
+	for _, record in pairs(records) do
 		if isValidGiftRecord(record) then
 			table.insert(validRecords, record)
 		end
@@ -75,14 +64,17 @@ local function validateGiftRecords(records)
 	return validRecords
 end
 
-local function enforceGiftLimit(giftHistory, recipientUserId)
+local function enforceGiftLimit(giftHistory: { any }, recipientUserId: number)
 	if #giftHistory >= MAX_GIFTS_PER_PLAYER then
 		warn(`[{script.Name}] Player {recipientUserId} has reached maximum gift limit ({MAX_GIFTS_PER_PLAYER})`)
 		table.remove(giftHistory, 1)
 	end
 end
 
-function GiftPersistence.saveGiftToDataStore(donorUserId, recipientUserId, giftAmount)
+--[[
+	Saves a gift to the DataStore.
+]]
+function GiftPersistence.saveGiftToDataStore(donorUserId: number, recipientUserId: number, giftAmount: number): boolean
 	if not ValidationUtils.isValidUserId(donorUserId)
 		or not ValidationUtils.isValidUserId(recipientUserId)
 		or not isValidGiftAmount(giftAmount) then
@@ -115,7 +107,7 @@ function GiftPersistence.saveGiftToDataStore(donorUserId, recipientUserId, giftA
 	end
 end
 
-local function formatGiftRecord(giftRecord)
+local function formatGiftRecord(giftRecord: any): any
 	local giftSenderName = UsernameCache.getUsername(giftRecord.from)
 	return {
 		Id = giftRecord.id,
@@ -125,7 +117,10 @@ local function formatGiftRecord(giftRecord)
 	}
 end
 
-function GiftPersistence.retrievePlayerGiftHistory(requestingPlayer)
+--[[
+	Retrieves the gift history for a player.
+]]
+function GiftPersistence.retrievePlayerGiftHistory(requestingPlayer: Player): { any }
 	if not ValidationUtils.isValidPlayer(requestingPlayer) then
 		warn(`[{script.Name}] Invalid player for gift retrieval`)
 		return {}
@@ -142,7 +137,7 @@ function GiftPersistence.retrievePlayerGiftHistory(requestingPlayer)
 
 	local formattedGiftList = {}
 	if type(result) == "table" then
-		for _, giftRecord in result do
+		for _, giftRecord in pairs(result) do
 			if not isValidGiftRecord(giftRecord) then
 				warn(`[{script.Name}] Invalid gift record found for player {requestingPlayer.UserId}`)
 				continue
@@ -154,7 +149,10 @@ function GiftPersistence.retrievePlayerGiftHistory(requestingPlayer)
 	return formattedGiftList
 end
 
-function GiftPersistence.removeAllPlayerGifts(targetPlayer)
+--[[
+	Removes all gifts for a player from the DataStore.
+]]
+function GiftPersistence.removeAllPlayerGifts(targetPlayer: Player): boolean
 	if not ValidationUtils.isValidPlayer(targetPlayer) then
 		warn("[Transaction.GiftPersistence] Invalid player for gift clearance")
 		return false
@@ -171,9 +169,5 @@ function GiftPersistence.removeAllPlayerGifts(targetPlayer)
 		return false
 	end
 end
-
--------------------
--- Return Module --
--------------------
 
 return GiftPersistence

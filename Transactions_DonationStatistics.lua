@@ -1,19 +1,16 @@
------------------
--- Init Module --
------------------
+--[[
+	DonationStatistics - Tracks and updates donation statistics.
+
+	Features:
+	- DataStore statistic updates
+	- Client notification sending
+	- Cross-server donation announcements
+]]
 
 local DonationStatistics = {}
 
---------------
--- Services --
---------------
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -29,10 +26,6 @@ local GameConfig = require(configurationFolder.GameConfig)
 
 local LARGE_DONATION_BROADCAST_TOPIC = GameConfig.MESSAGING_SERVICE_CONFIG.LARGE_DONATION_TOPIC
 local LARGE_DONATION_THRESHOLD_AMOUNT = GameConfig.MESSAGING_SERVICE_CONFIG.DONATION_THRESHOLD
-
----------------
--- Constants --
----------------
 
 local CLIENT_NOTIFICATION_TYPES = {
 	SUCCESS = "Success",
@@ -56,15 +49,11 @@ local STAT_KEY_RAISED = "Raised"
 
 local MIN_GIFT_AMOUNT = 1
 
----------------
--- Functions --
----------------
-
-local function isValidGiftAmount(amount)
+local function isValidGiftAmount(amount: number): boolean
 	return ValidationUtils.isValidNumber(amount) and amount >= MIN_GIFT_AMOUNT
 end
 
-local function incrementDonatedDataStore(playerId, incrementAmount)
+local function incrementDonatedDataStore(playerId: number, incrementAmount: number): number
 	if not ValidationUtils.isValidUserId(playerId) or not isValidGiftAmount(incrementAmount) then
 		warn(`[{script.Name}] Invalid parameters for Donated DataStore increment: userId={tostring(playerId)}, amount={tostring(incrementAmount)}`)
 		return 0
@@ -80,7 +69,7 @@ local function incrementDonatedDataStore(playerId, incrementAmount)
 	end
 end
 
-local function incrementRaisedDataStore(playerId, incrementAmount)
+local function incrementRaisedDataStore(playerId: number, incrementAmount: number): number
 	if not ValidationUtils.isValidUserId(playerId) or not isValidGiftAmount(incrementAmount) then
 		warn(`[{script.Name}] Invalid parameters for Raised DataStore increment: userId={tostring(playerId)}, amount={tostring(incrementAmount)}`)
 		return 0
@@ -96,7 +85,7 @@ local function incrementRaisedDataStore(playerId, incrementAmount)
 	end
 end
 
-local function sendClientNotification(player, message, notificationType)
+local function sendClientNotification(player: Player, message: string, notificationType: string)
 	if not ValidationUtils.isValidPlayer(player) then
 		warn(`[{script.Name}] Invalid player for notification`)
 		return
@@ -111,12 +100,15 @@ local function sendClientNotification(player, message, notificationType)
 	end
 end
 
-local function formatDonationConfirmation(recipientDisplayName, recipientIsOnline)
+local function formatDonationConfirmation(recipientDisplayName: string, recipientIsOnline: boolean): string
 	local transactionType = if recipientIsOnline then TRANSACTION_TYPE_DONATION else TRANSACTION_TYPE_GIFT
 	return `Your {transactionType} has been sent to {recipientDisplayName}!`
 end
 
-function DonationStatistics.sendDonationConfirmationToPlayer(donorPlayer, recipientDisplayName, recipientIsOnline)
+--[[
+	Sends a donation confirmation notification to the donor.
+]]
+function DonationStatistics.sendDonationConfirmationToPlayer(donorPlayer: Player, recipientDisplayName: string, recipientIsOnline: boolean)
 	if not ValidationUtils.isValidPlayer(donorPlayer) then
 		warn(`[{script.Name}] Invalid donor player for confirmation`)
 		return
@@ -126,15 +118,24 @@ function DonationStatistics.sendDonationConfirmationToPlayer(donorPlayer, recipi
 	sendClientNotification(donorPlayer, confirmationMessage, CLIENT_NOTIFICATION_TYPES.SUCCESS)
 end
 
-function DonationStatistics.sendPurchaseCancellationNotification(player)
+--[[
+	Sends a purchase cancellation notification to the player.
+]]
+function DonationStatistics.sendPurchaseCancellationNotification(player: Player)
 	sendClientNotification(player, PURCHASE_CANCELLED_MESSAGE, CLIENT_NOTIFICATION_TYPES.WARNING)
 end
 
-function DonationStatistics.sendDonationFailureNotification(player)
+--[[
+	Sends a donation failure notification to the player.
+]]
+function DonationStatistics.sendDonationFailureNotification(player: Player)
 	sendClientNotification(player, DONATION_FAILED_MESSAGE, CLIENT_NOTIFICATION_TYPES.ERROR)
 end
 
-function DonationStatistics.sendDeveloperProductConfirmation(player)
+--[[
+	Sends a developer product confirmation to the player.
+]]
+function DonationStatistics.sendDeveloperProductConfirmation(player: Player)
 	if not ValidationUtils.isValidPlayer(player) then
 		warn(`[{script.Name}] Invalid player for developer product confirmation`)
 		return
@@ -143,11 +144,11 @@ function DonationStatistics.sendDeveloperProductConfirmation(player)
 	sendClientNotification(player, DEVELOPER_PRODUCT_CONFIRMATION_MESSAGE, CLIENT_NOTIFICATION_TYPES.SUCCESS)
 end
 
-local function getDonationActionVerb(recipientIsOnline)
+local function getDonationActionVerb(recipientIsOnline: boolean): string
 	return if recipientIsOnline then ACTION_VERB_DONATED else ACTION_VERB_GIFTED
 end
 
-local function announceToAllClients(donorName, recipientName, actionVerb, amount)
+local function announceToAllClients(donorName: string, recipientName: string, actionVerb: string, amount: number)
 	local success = pcall(function()
 		messageRemoteEvent:FireAllClients(donorName, recipientName, actionVerb, amount)
 	end)
@@ -158,7 +159,7 @@ end
 
 local DonationMessaging = nil
 
-local function broadcastLargeDonation(donorName, recipientName, actionVerb, amount)
+local function broadcastLargeDonation(donorName: string, recipientName: string, actionVerb: string, amount: number)
 	if not DonationMessaging then
 		warn(`[{script.Name}] DonationMessaging module not set, cannot broadcast large donation`)
 		return
@@ -172,7 +173,10 @@ local function broadcastLargeDonation(donorName, recipientName, actionVerb, amou
 	})
 end
 
-function DonationStatistics.announceDonationToAllPlayers(donorPlayer, recipientDisplayName, donationAmount, recipientIsCurrentlyOnline)
+--[[
+	Announces a donation to all players in the server.
+]]
+function DonationStatistics.announceDonationToAllPlayers(donorPlayer: Player, recipientDisplayName: string, donationAmount: number, recipientIsCurrentlyOnline: boolean)
 	if not ValidationUtils.isValidPlayer(donorPlayer) then
 		warn(`[{script.Name}] Invalid donor player for announcement`)
 		return
@@ -193,7 +197,7 @@ function DonationStatistics.announceDonationToAllPlayers(donorPlayer, recipientD
 	end
 end
 
-local function updatePlayerStatistics(userId, statKey, amount)
+local function updatePlayerStatistics(userId: number, statKey: string, amount: number): boolean
 	local success, errorMessage = pcall(function()
 		PlayerData:IncrementPlayerStatistic(userId, statKey, amount)
 	end)
@@ -204,7 +208,10 @@ local function updatePlayerStatistics(userId, statKey, amount)
 	return true
 end
 
-function DonationStatistics.updateDonationStatistics(donorUserId, recipientUserId, transactionAmount)
+--[[
+	Updates donation statistics for both donor and recipient.
+]]
+function DonationStatistics.updateDonationStatistics(donorUserId: number, recipientUserId: number, transactionAmount: number): boolean
 	if not ValidationUtils.isValidUserId(donorUserId) or not ValidationUtils.isValidUserId(recipientUserId) or not isValidGiftAmount(transactionAmount) then
 		warn(`[{script.Name}] Invalid statistics update parameters: donor={tostring(donorUserId)}, recipient={tostring(recipientUserId)}, amount={tostring(transactionAmount)}`)
 		return false
@@ -219,7 +226,10 @@ function DonationStatistics.updateDonationStatistics(donorUserId, recipientUserI
 	return (donatedSuccess > 0 or raisedSuccess > 0 or localDonatedSuccess or localRaisedSuccess)
 end
 
-function DonationStatistics.updateDonorStatisticsOnly(donorUserId, transactionAmount)
+--[[
+	Updates only the donor's statistics.
+]]
+function DonationStatistics.updateDonorStatisticsOnly(donorUserId: number, transactionAmount: number): boolean
 	if not ValidationUtils.isValidUserId(donorUserId) or not isValidGiftAmount(transactionAmount) then
 		warn(`[{script.Name}] Invalid donor statistics update parameters: donor={tostring(donorUserId)}, amount={tostring(transactionAmount)}`)
 		return false
@@ -231,7 +241,10 @@ function DonationStatistics.updateDonorStatisticsOnly(donorUserId, transactionAm
 	return (donatedSuccess > 0 or localDonatedSuccess)
 end
 
-function DonationStatistics.updateDonorStatisticsWithReceipt(donorUserId, purchaseId, transactionAmount)
+--[[
+	Updates donor statistics with receipt processing.
+]]
+function DonationStatistics.updateDonorStatisticsWithReceipt(donorUserId: number, purchaseId: string, transactionAmount: number): (boolean, string?)
 	if not ValidationUtils.isValidUserId(donorUserId) or not isValidGiftAmount(transactionAmount) then
 		warn(`[{script.Name}] Invalid donor statistics update parameters: donor={tostring(donorUserId)}, amount={tostring(transactionAmount)}`)
 		return false, "invalid_params"
@@ -260,12 +273,11 @@ function DonationStatistics.updateDonorStatisticsWithReceipt(donorUserId, purcha
 	return true, status
 end
 
-function DonationStatistics.setDonationMessagingModule(module)
+--[[
+	Sets the DonationMessaging module reference for cross-server broadcasts.
+]]
+function DonationStatistics.setDonationMessagingModule(module: any)
 	DonationMessaging = module
 end
-
--------------------
--- Return Module --
--------------------
 
 return DonationStatistics

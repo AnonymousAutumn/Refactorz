@@ -1,20 +1,17 @@
------------------
--- Init Module --
------------------
+--[[
+	PurchaseFlow - Handles purchase completion and processing.
+
+	Features:
+	- Gamepass purchase handling
+	- Developer product processing
+	- Gift saving for offline recipients
+]]
 
 local PurchaseFlow = {}
-
---------------
--- Services --
---------------
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-
-----------------
--- References --
-----------------
 
 local networkFolder = ReplicatedStorage.Network
 local remoteEvents = networkFolder.Remotes.Events
@@ -27,30 +24,18 @@ local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local Coins = require(modulesFolder.Utilities.Coins)
 local GameConfig = require(configurationFolder.GameConfig)
 
----------------
--- Constants --
----------------
-
 local MAX_DATASTORE_RETRIES = 3
 local BASE_RETRY_DELAY = 1
-
----------------
--- Variables --
----------------
 
 local GiftPersistence = nil
 local DonationStatistics = nil
 local DonationMessaging = nil
 
----------------
--- Functions --
----------------
-
-local function isValidGiftAmount(amount)
-	return ValidationUtils.isValidNumber(amount) and amount >= 1 
+local function isValidGiftAmount(amount: number): boolean
+	return ValidationUtils.isValidNumber(amount) and amount >= 1
 end
 
-local function isValidGamepassInfo(info)
+local function isValidGamepassInfo(info: any): boolean
 	if typeof(info) ~= "table" then
 		return false
 	end
@@ -59,18 +44,18 @@ local function isValidGamepassInfo(info)
 		and ValidationUtils.isValidUserId(info.Creator.Id)
 end
 
-local function isValidDeveloperProductInfo(info)
+local function isValidDeveloperProductInfo(info: any): boolean
 	if typeof(info) ~= "table" then
 		return false
 	end
 	return info.PriceInRobux ~= nil and typeof(info.PriceInRobux) == "number"
 end
 
-local function calculateRetryDelay(attemptNumber)
+local function calculateRetryDelay(attemptNumber: number): number
 	return BASE_RETRY_DELAY * attemptNumber
 end
 
-local function fetchGamepassProductInfo(gamepassAssetId)
+local function fetchGamepassProductInfo(gamepassAssetId: number): any?
 	for attempt = 1, MAX_DATASTORE_RETRIES do
 		local success, result = pcall(function()
 			return MarketplaceService:GetProductInfo(gamepassAssetId, Enum.InfoType.GamePass)
@@ -90,7 +75,7 @@ local function fetchGamepassProductInfo(gamepassAssetId)
 	return nil
 end
 
-local function fetchDeveloperProductInfo(productId)
+local function fetchDeveloperProductInfo(productId: number): any?
 	for attempt = 1, MAX_DATASTORE_RETRIES do
 		local success, result = pcall(function()
 			return MarketplaceService:GetProductInfo(productId, Enum.InfoType.Product)
@@ -110,7 +95,7 @@ local function fetchDeveloperProductInfo(productId)
 	return nil
 end
 
-local function extractCreatorInfo(gamepassProductInfo)
+local function extractCreatorInfo(gamepassProductInfo: any): (number?, number?)
 	local creatorUserId = gamepassProductInfo.Creator and gamepassProductInfo.Creator.Id
 	local priceInRobux = gamepassProductInfo.PriceInRobux or 0
 
@@ -126,7 +111,7 @@ local function extractCreatorInfo(gamepassProductInfo)
 	return creatorUserId, priceInRobux
 end
 
-local function processSuccessfulPurchase(purchasingPlayer, gamepassAssetId)
+local function processSuccessfulPurchase(purchasingPlayer: Player, gamepassAssetId: number)
 	local gamepassProductInfo = fetchGamepassProductInfo(gamepassAssetId)
 	if not gamepassProductInfo then
 		warn(`[{script.Name}] Failed to retrieve product information for gamepass {gamepassAssetId}`)
@@ -194,7 +179,10 @@ local function processSuccessfulPurchase(purchasingPlayer, gamepassAssetId)
 	end
 end
 
-function PurchaseFlow.handleGamepassPurchaseCompletion(purchasingPlayer, gamepassAssetId, purchaseWasSuccessful)
+--[[
+	Handles gamepass purchase completion.
+]]
+function PurchaseFlow.handleGamepassPurchaseCompletion(purchasingPlayer: Player, gamepassAssetId: number, purchaseWasSuccessful: boolean)
 	if not ValidationUtils.isValidPlayer(purchasingPlayer) then
 		warn(`[{script.Name}] Invalid player for purchase completion`)
 		return
@@ -207,8 +195,6 @@ function PurchaseFlow.handleGamepassPurchaseCompletion(purchasingPlayer, gamepas
 		return
 	end
 
-	-- passes owned by the experience (monetization):
-	-- handled separately and not treated as regular purchases
 	for _, pass in pairs(GameConfig.MONETIZATION) do
 		if gamepassAssetId == pass then
 			local gamepassProductInfo = fetchGamepassProductInfo(gamepassAssetId)
@@ -224,7 +210,10 @@ function PurchaseFlow.handleGamepassPurchaseCompletion(purchasingPlayer, gamepas
 	task.spawn(processSuccessfulPurchase, purchasingPlayer, gamepassAssetId)
 end
 
-function PurchaseFlow.handleDeveloperProductPurchase(receiptInfo)
+--[[
+	Handles developer product purchase receipt.
+]]
+function PurchaseFlow.handleDeveloperProductPurchase(receiptInfo: any): Enum.ProductPurchaseDecision
 	local playerId = receiptInfo.PlayerId
 	local productId = receiptInfo.ProductId
 	local purchaseId = receiptInfo.PurchaseId
@@ -266,20 +255,25 @@ function PurchaseFlow.handleDeveloperProductPurchase(receiptInfo)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
-function PurchaseFlow.setGiftPersistenceModule(module)
+--[[
+	Sets the GiftPersistence module reference.
+]]
+function PurchaseFlow.setGiftPersistenceModule(module: any)
 	GiftPersistence = module
 end
 
-function PurchaseFlow.setDonationStatisticsModule(module)
+--[[
+	Sets the DonationStatistics module reference.
+]]
+function PurchaseFlow.setDonationStatisticsModule(module: any)
 	DonationStatistics = module
 end
 
-function PurchaseFlow.setDonationMessagingModule(module)
+--[[
+	Sets the DonationMessaging module reference.
+]]
+function PurchaseFlow.setDonationMessagingModule(module: any)
 	DonationMessaging = module
 end
-
--------------------
--- Return Module --
--------------------
 
 return PurchaseFlow

@@ -14,6 +14,7 @@ local localPlayerGui = localPlayer:WaitForChild("PlayerGui")
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
+local GamepadSelection = require(modulesFolder.Utilities.GamepadSelection)
 local TimeFormatter = require(script.TimeFormatter)
 local UIRenderer = require(script.UIRenderer)
 local ValidationHandler = require(script.ValidationHandler)
@@ -298,6 +299,12 @@ local function initialize()
 				cleanup()
 			end
 		end)
+	)
+
+	-- Setup gamepad auto-selection for console support
+	GiftUIState.connections:add(
+		GamepadSelection.setupAutoSelection(giftDisplayFrame, giftInterfaceCloseButton, "GiftDisplay"),
+		GamepadSelection.setupAutoSelection(sendGiftInterfaceFrame, giftSendConfirmationButton, "SendGift")
 	)
 
 	BackgroundTasks.requestLatestGiftDataCallback = requestLatestGiftDataFromServer

@@ -16,7 +16,7 @@ local remoteEvents = networkFolder.Remotes.Events
 local unclaimStandRemoteEvent = remoteEvents.UnclaimStand
 local toggleStandClaimRemoteEvent = remoteEvents.ToggleStandClaim
 local refreshStandRemoteEvent = remoteEvents.RefreshStand
-local sendNotificationRemoteEvent = remoteEvents.SendMessage
+local sendNotificationRemoteEvent = remoteEvents.CreateNotification
 
 local modulesFolder = ReplicatedStorage.Modules
 local configurationFolder = ReplicatedStorage.Configuration

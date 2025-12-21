@@ -158,14 +158,20 @@ function Connect4GameBoard:_connectEvents()
 		self:_handlePlayerLeaving(player)
 	end)
 
-	Players.PlayerAdded:Connect(function(player)
+	local function setupPlayerDeathHandler(player)
 		player.CharacterAdded:Connect(function(character)
 			local humanoid = character:WaitForChild("Humanoid")
 			humanoid.Died:Connect(function()
 				self:_handlePlayerLeaving(player)
 			end)
 		end)
-	end)
+	end
+
+	for _, player in Players:GetPlayers() do
+		setupPlayerDeathHandler(player)
+	end
+
+	Players.PlayerAdded:Connect(setupPlayerDeathHandler)
 
 	connect4Remotes.PlayerExited.OnServerEvent:Connect(function(player)
 		if typeof(player) ~= "Instance" or not player:IsA("Player") then

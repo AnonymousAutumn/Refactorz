@@ -30,6 +30,7 @@ local PurchaseWrapper = require(modulesFolder.Wrappers.Purchases)
 local NotificationHelper = require(modulesFolder.Utilities.NotificationHelper)
 local InputCategorizer = require(modulesFolder.Utilities.InputCategorizer)
 local FormatString = require(modulesFolder.Utilities.FormatString)
+local GamepadSelection = require(modulesFolder.Utilities.GamepadSelection)
 local GameConfig = require(configurationFolder.GameConfig)
 
 local instancesFolder = ReplicatedStorage.Instances
@@ -123,6 +124,7 @@ local function populateStandUI(standModel, gamepasses, remove)
 	playerStandUIs[standModel] = templateGui
 
 	local itemFrame = templateGui:FindFirstChild("ItemFrame", true)
+	local createdButtons = {}
 	if itemFrame and gamepasses then
 		for _, pass in ipairs(gamepasses) do
 			local formattedPrice = FormatString.formatNumberWithThousandsSeparatorCommas(pass.Price)
@@ -136,7 +138,16 @@ local function populateStandUI(standModel, gamepasses, remove)
 				.. formattedPrice
 			passTemplate.ItemIcon.Image = pass.Icon or ""
 			passTemplate.Parent = itemFrame
+			table.insert(createdButtons, passTemplate)
 		end
+
+		-- Sort buttons by LayoutOrder for proper navigation order
+		table.sort(createdButtons, function(a, b)
+			return a.LayoutOrder < b.LayoutOrder
+		end)
+
+		-- Setup gamepad navigation order for console support
+		GamepadSelection.setupNavigationOrder(createdButtons, "vertical")
 	end
 
 	handleSurfaceGui(templateGui)

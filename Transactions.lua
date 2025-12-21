@@ -17,7 +17,6 @@ local giftRequestRemoteFunction = remoteFunctions.RequestGifts
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
-local UsernameCache = require(modulesFolder.Caches.UsernameCache)
 local EnhancedValidation = require(modulesFolder.Utilities.EnhancedValidation)
 local RateLimiter = require(modulesFolder.Utilities.RateLimiter)
 local GiftPersistence = require(script.GiftPersistence)
@@ -38,7 +37,6 @@ local connectionsMaid = Connections.new()
 local function cleanup()
 	connectionsMaid:disconnect()
 	DonationMessaging.cleanup()
-	UsernameCache.clearCache()
 end
 
 local function initialize()

@@ -16,7 +16,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
-local UsernameCache = require(modulesFolder.Caches.UsernameCache)
 local FrameValidator = require(script.FrameValidator)
 local DisplayFormatter = require(script.DisplayFormatter)
 local ColorStyler = require(script.ColorStyler)
@@ -153,10 +152,6 @@ function Populater.refreshAllLeaderboardDisplayFrames(leaderboardFrames, leaderb
 			displayFrame.Visible = false
 		end
 	end
-end
-
-function Populater.clearUsernameCache()
-	UsernameCache.clearCache()
 end
 
 -------------------

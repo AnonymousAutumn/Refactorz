@@ -17,15 +17,12 @@ local Players = game:GetService("Players")
 
 local modulesFolder = ReplicatedStorage.Modules
 local validationUtils = require(modulesFolder.Utilities.ValidationUtils)
-local CacheManager = require(modulesFolder.Wrappers.Cache)
 
 ---------------
 -- Constants --
 ---------------
 
 local DEFAULT_USERNAME = "Unknown"
-local USERNAME_CACHE_EXPIRATION = 60 * 60
-local USERNAME_CACHE_CLEANUP_INTERVAL = 60 * 10
 local MAX_USERNAME_RETRIES = 2
 local USERNAME_FETCH_TIMEOUT = 5
 local BASE_RETRY_DELAY = 1
@@ -33,12 +30,6 @@ local BASE_RETRY_DELAY = 1
 ---------------
 -- Variables --
 ---------------
-
-local usernameCacheMaid = CacheManager.new(
-	USERNAME_CACHE_EXPIRATION,
-	USERNAME_CACHE_CLEANUP_INTERVAL,
-	true
-)
 
 local apiCalls = 0
 local apiFailures = 0
@@ -81,78 +72,110 @@ local function fetchUsernameFromAPI(targetUserId)
 	return false, nil
 end
 
-function UsernameCache.getUsername(targetUserId)
+--[[
+	Fetches a username directly from the Roblox API.
+	This method always makes a fresh API call for safety and accuracy.
 
+	@param targetUserId number - The user ID to fetch the username for
+	@return string - The username, or "Unknown" if the fetch fails
+]]
+function UsernameCache.getUsername(targetUserId)
 	if not validationUtils.isValidUserId(targetUserId) then
 		warn(`[{script.Name}] Invalid user ID provided: {tostring(targetUserId)}`)
 		return DEFAULT_USERNAME
 	end
 
-	local cachedName = usernameCacheMaid:get(targetUserId)
-	if cachedName then
-		return cachedName
-	end
-
 	local success, username = fetchUsernameFromAPI(targetUserId)
 	if success and username then
-		usernameCacheMaid:set(targetUserId, username)
-		
 		return username
 	end
 
 	return DEFAULT_USERNAME
 end
 
+--[[
+	Alias for getUsername. Fetches username directly from API.
+	Note: Despite the name, this performs a synchronous API call.
+
+	@param targetUserId number - The user ID to fetch the username for
+	@return string - The username, or "Unknown" if the fetch fails
+]]
 function UsernameCache.getUsernameAsync(targetUserId)
 	return UsernameCache.getUsername(targetUserId)
 end
 
+--[[
+	@deprecated Caching has been removed. This method is a no-op.
+	Kept for backwards compatibility with existing code.
+]]
 function UsernameCache.setCachedUsername(userId, username)
-	if not validationUtils.isValidUserId(userId) or not validationUtils.isValidString(username) then
-		warn(`[{script.Name}] Invalid userId or username provided to setCachedUsername`)
-		return
-	end
-
-	usernameCacheMaid:set(userId, username)
+	-- No-op: caching has been removed in favor of direct API fetching
 end
 
+--[[
+	@deprecated Caching has been removed. This method is a no-op.
+	Kept for backwards compatibility with existing code.
+]]
 function UsernameCache.invalidateCache(userId)
-	usernameCacheMaid:invalidate(userId)
+	-- No-op: caching has been removed in favor of direct API fetching
 end
 
+--[[
+	@deprecated Caching has been removed. This method is a no-op.
+	Kept for backwards compatibility with existing code.
+]]
 function UsernameCache.clearCache()
-	usernameCacheMaid:clear()
+	-- No-op: caching has been removed in favor of direct API fetching
 end
 
+--[[
+	@deprecated Caching has been removed. This method is a no-op.
+	Kept for backwards compatibility with existing code.
+]]
 function UsernameCache.cleanup()
-	return usernameCacheMaid:cleanup()
+	-- No-op: caching has been removed in favor of direct API fetching
+	return 0
 end
 
-function UsernameCache.getStatistics()
-	local baseStats = usernameCacheMaid:getStatistics()
+--[[
+	Returns statistics about API usage.
+	Note: Cache-related statistics (hits, misses, evictions, size) are no longer tracked.
 
+	@return table - Statistics containing apiCalls and failures counts
+]]
+function UsernameCache.getStatistics()
 	return {
-		hits = baseStats.hits,
-		misses = baseStats.misses,
-		evictions = baseStats.evictions,
-		size = baseStats.size,
+		hits = 0, -- Deprecated: always 0 as caching is removed
+		misses = 0, -- Deprecated: always 0 as caching is removed
+		evictions = 0, -- Deprecated: always 0 as caching is removed
+		size = 0, -- Deprecated: always 0 as caching is removed
 		apiCalls = apiCalls,
 		failures = apiFailures,
 	}
 end
 
+--[[
+	Resets the API call statistics counters.
+]]
 function UsernameCache.resetStatistics()
-	usernameCacheMaid:resetStatistics()
 	apiCalls = 0
 	apiFailures = 0
 end
 
+--[[
+	@deprecated Caching has been removed. This method is a no-op.
+	Kept for backwards compatibility with existing code.
+]]
 function UsernameCache.configure(settings)
-	warn(`[{script.Name}] Note: configure() is not yet implemented. Using defaults.`)
+	-- No-op: caching has been removed in favor of direct API fetching
 end
 
+--[[
+	@deprecated Caching has been removed. This method is a no-op.
+	Kept for backwards compatibility with existing code.
+]]
 function UsernameCache.shutdown()
-	usernameCacheMaid:stopAutoCleanup()
+	-- No-op: caching has been removed in favor of direct API fetching
 end
 
 -------------------

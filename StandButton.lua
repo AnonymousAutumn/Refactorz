@@ -37,7 +37,8 @@ local function initialize()
 	local holder = mainFrame:WaitForChild("Holder")
 	local button = holder:WaitForChild("StandButton")
 
-	button.MouseButton1Down:Connect(function()
+	-- Use Activated for cross-platform support (PC, Mobile, Console)
+	button.Activated:Connect(function()
 		toggleStandClaimRemoteEvent:FireServer()
 	end)
 end

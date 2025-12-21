@@ -8,7 +8,7 @@ local UIButtonHandler = {}
 -- Variables --
 ---------------
 
-local isUserOnTouchDevice = false
+local currentInputCategory = "Unknown"
 
 ---------------
 -- Functions --
@@ -20,38 +20,44 @@ local function playSound(sound)
 	end
 end
 
-local function getPrimaryInteractionSignal(button)
-	return if isUserOnTouchDevice then button.TouchTap else button.MouseButton1Down
-end
-
 local function trackConnection(connection, tracker)
 	if tracker and tracker.track then
 		tracker:track(connection)
 	end
 end
 
+local function isGamepadInput()
+	return currentInputCategory == "Gamepad"
+end
+
+local function isTouchInput()
+	return currentInputCategory == "Touch"
+end
+
 function UIButtonHandler.initialize(inputCategorizer)
 	if inputCategorizer then
-		isUserOnTouchDevice = inputCategorizer.getLastInputCategory() == "Touch"
+		currentInputCategory = inputCategorizer.getLastInputCategory() or "Unknown"
 	end
 end
 
 function UIButtonHandler.setupButton(config)
 	local button = config.button
-	if not button or not button:IsA("TextButton") then
+	if not button or not (button:IsA("TextButton") or button:IsA("ImageButton")) then
 		return
 	end
 
 	local hoverSound = config.sounds and config.sounds.hover
 	local clickSound = config.sounds and config.sounds.click
 
-	local clickConnection = getPrimaryInteractionSignal(button):Connect(function()
+	-- Use Activated for cross-platform support (PC, Mobile, Console)
+	local clickConnection = button.Activated:Connect(function()
 		playSound(clickSound)
 		config.onClick(button)
 	end)
 	trackConnection(clickConnection, config.connectionTracker)
 
-	if not isUserOnTouchDevice and hoverSound then
+	-- Hover sounds only for non-touch, non-gamepad devices
+	if not isTouchInput() and not isGamepadInput() and hoverSound then
 		local hoverConnection = button.MouseEnter:Connect(function()
 			playSound(hoverSound)
 		end)
@@ -72,7 +78,7 @@ end
 
 function UIButtonHandler.setupAllButtons(container, onClick, sounds, connectionTracker, watchForNew)
 	for _, descendant in container:GetDescendants() do
-		if descendant:IsA("TextButton") then
+		if descendant:IsA("TextButton") or descendant:IsA("ImageButton") then
 			UIButtonHandler.setupButton({
 				button = descendant,
 				onClick = onClick,
@@ -84,7 +90,7 @@ function UIButtonHandler.setupAllButtons(container, onClick, sounds, connectionT
 
 	if watchForNew then
 		local connection = container.DescendantAdded:Connect(function(descendant)
-			if descendant:IsA("TextButton") then
+			if descendant:IsA("TextButton") or descendant:IsA("ImageButton") then
 				UIButtonHandler.setupButton({
 					button = descendant,
 					onClick = onClick,
@@ -98,11 +104,20 @@ function UIButtonHandler.setupAllButtons(container, onClick, sounds, connectionT
 end
 
 function UIButtonHandler.isOnTouchDevice()
-	return isUserOnTouchDevice
+	return isTouchInput()
+end
+
+function UIButtonHandler.isOnGamepad()
+	return isGamepadInput()
+end
+
+function UIButtonHandler.getInputCategory()
+	return currentInputCategory
 end
 
 function UIButtonHandler.getPrimarySignal(button)
-	return getPrimaryInteractionSignal(button)
+	-- Return Activated for cross-platform compatibility
+	return button.Activated
 end
 
 -------------------

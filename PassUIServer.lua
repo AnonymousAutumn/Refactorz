@@ -88,7 +88,8 @@ local function retrievePlayerDonationInterface(targetPlayer, isInGiftingMode)
 		return nil
 	end
 
-	local closeConnection = interfaceComponents.CloseButton.MouseButton1Click:Once(function()
+	-- Use Activated for cross-platform support (PC, Mobile, Console)
+	local closeConnection = interfaceComponents.CloseButton.Activated:Once(function()
 		pcall(function()
 			if isInGiftingMode then
 				targetPlayer:SetAttribute(PLAYER_ATTRIBUTES_REFERENCE.Gifting, nil)

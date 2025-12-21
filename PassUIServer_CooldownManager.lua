@@ -194,7 +194,8 @@ function CooldownManager.initializeRefreshButtonBehavior(currentViewer, userInte
 		return nil
 	end
 
-	local refreshConnection = userInterface.RefreshButton.MouseButton1Click:Connect(function()
+	-- Use Activated for cross-platform support (PC, Mobile, Console)
+	local refreshConnection = userInterface.RefreshButton.Activated:Connect(function()
 		CooldownManager.handleRefreshButtonClick(currentViewer, userInterface, viewingData)
 	end)
 

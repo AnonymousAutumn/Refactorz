@@ -58,12 +58,13 @@ function UIEventHandler.setupEventConnections(uiElements, connections, musicTrac
 		uiElements.volumeDragDetector.DragEnd:Connect(function()
 			dragging = false
 		end),
-		uiElements.nextTrackButton.MouseButton1Click:Connect(function()
+		-- Use Activated for cross-platform support (PC, Mobile, Console)
+		uiElements.nextTrackButton.Activated:Connect(function()
 			if #musicTracks > 0 and UIEventHandler.playNextTrackCallback then
 				UIEventHandler.playNextTrackCallback()
 			end
 		end),
-		uiElements.previousTrackButton.MouseButton1Click:Connect(function()
+		uiElements.previousTrackButton.Activated:Connect(function()
 			if #musicTracks > 0 and UIEventHandler.playPreviousTrackCallback then
 				UIEventHandler.playPreviousTrackCallback()
 			end

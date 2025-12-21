@@ -283,10 +283,11 @@ local function initialize()
 	usernameInputTextBox = usernameInputFrame:WaitForChild("TextBox")
 	giftSendConfirmationButton = sendGiftInterfaceFrame:WaitForChild("ConfirmButton")
 
+	-- Use Activated for cross-platform support (PC, Mobile, Console)
 	GiftUIState.connections:add(
-		giftNotificationButton.MouseButton1Click:Connect(handleGiftNotificationButtonClick),
-		giftSendConfirmationButton.MouseButton1Click:Connect(validateUsernameAndInitiateGiftProcess),
-		giftInterfaceCloseButton.MouseButton1Click:Connect(clearAllGiftDataAndInterface),
+		giftNotificationButton.Activated:Connect(handleGiftNotificationButtonClick),
+		giftSendConfirmationButton.Activated:Connect(validateUsernameAndInitiateGiftProcess),
+		giftInterfaceCloseButton.Activated:Connect(clearAllGiftDataAndInterface),
 		screenGui.AncestryChanged:Connect(function()
 			if not screenGui:IsDescendantOf(game) then
 				cleanup()

@@ -180,11 +180,8 @@ end
 --------------------
 
 local function initialize()
-	StatisticsAPI.setDataCacheModule(DataCache)
-	StatisticsAPI.setDataStoreModule(DataStore)
-	StatisticsAPI.setCrossServerMessagingModule(CrossServerMessaging)
 	CrossServerMessaging.subscribe(trackConnection)
-	
+
 	DataCache.setRemovalCallback(function(playerUserId, data)
 		DataStore.savePlayerStatistics(playerUserId, data)
 	end)

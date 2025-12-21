@@ -17,6 +17,9 @@ local Players = game:GetService("Players")
 
 local modulesFolder = ReplicatedStorage.Modules
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
+local DataCache = require(script.Parent.DataCache)
+local DataStore = require(script.Parent.DataStore)
+local CrossServerMessaging = require(script.Parent.CrossServerMessaging)
 
 ---------------
 -- Constants --
@@ -29,14 +32,6 @@ local DEFAULT_PLAYER_STATISTICS = {
 }
 
 local SAVE_DEBOUNCE_SECONDS = 15
-
----------------
--- Variables --
----------------
-
-local DataCache = nil
-local DataStore = nil
-local CrossServerMessaging = nil
 
 ---------------
 -- Functions --
@@ -140,18 +135,6 @@ function StatisticsAPI.getPlayerStatisticValue(playerUserId, statisticName)
 	end
 
 	return playerStatisticsData[statisticName] or 0
-end
-
-function StatisticsAPI.setDataCacheModule(module)
-	DataCache = module
-end
-
-function StatisticsAPI.setDataStoreModule(module)
-	DataStore = module
-end
-
-function StatisticsAPI.setCrossServerMessagingModule(module)
-	CrossServerMessaging = module
 end
 
 -------------------

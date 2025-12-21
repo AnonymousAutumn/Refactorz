@@ -21,7 +21,6 @@ local EnhancedValidation = require(modulesFolder.Utilities.EnhancedValidation)
 local RateLimiter = require(modulesFolder.Utilities.RateLimiter)
 local GiftPersistence = require(script.GiftPersistence)
 local DonationMessaging = require(script.DonationMessaging)
-local DonationStatistics = require(script.DonationStatistics)
 local PurchaseFlow = require(script.PurchaseFlow)
 
 ---------------
@@ -40,12 +39,6 @@ local function cleanup()
 end
 
 local function initialize()
-	PurchaseFlow.setGiftPersistenceModule(GiftPersistence)
-	PurchaseFlow.setDonationStatisticsModule(DonationStatistics)
-	PurchaseFlow.setDonationMessagingModule(DonationMessaging)
-
-	DonationStatistics.setDonationMessagingModule(DonationMessaging)
-	
 	giftRequestRemoteFunction.OnServerInvoke = function(player)
 		if not EnhancedValidation.validatePlayer(player) then
 			warn(`[{script.Name}] Invalid player in gift request`)

@@ -26,6 +26,7 @@ local PlayerData = require(modulesFolder.Managers.PlayerData)
 local DataStores = require(modulesFolder.Wrappers.DataStores)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local GameConfig = require(configurationFolder.GameConfig)
+local DonationMessaging = require(script.Parent.DonationMessaging)
 
 local LARGE_DONATION_BROADCAST_TOPIC = GameConfig.MESSAGING_SERVICE_CONFIG.LARGE_DONATION_TOPIC
 local LARGE_DONATION_THRESHOLD_AMOUNT = GameConfig.MESSAGING_SERVICE_CONFIG.DONATION_THRESHOLD
@@ -156,14 +157,7 @@ local function announceToAllClients(donorName, recipientName, actionVerb, amount
 	end
 end
 
-local DonationMessaging = nil
-
 local function broadcastLargeDonation(donorName, recipientName, actionVerb, amount)
-	if not DonationMessaging then
-		warn(`[{script.Name}] DonationMessaging module not set, cannot broadcast large donation`)
-		return
-	end
-
 	DonationMessaging.broadcastToMessagingService(LARGE_DONATION_BROADCAST_TOPIC, {
 		Donor = donorName,
 		Receiver = recipientName,
@@ -258,10 +252,6 @@ function DonationStatistics.updateDonorStatisticsWithReceipt(donorUserId, purcha
 	end
 
 	return true, status
-end
-
-function DonationStatistics.setDonationMessagingModule(module)
-	DonationMessaging = module
 end
 
 -------------------

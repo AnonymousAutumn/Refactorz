@@ -26,6 +26,9 @@ local UsernameCache = require(modulesFolder.Caches.UsernameCache)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local Coins = require(modulesFolder.Utilities.Coins)
 local GameConfig = require(configurationFolder.GameConfig)
+local GiftPersistence = require(script.Parent.GiftPersistence)
+local DonationStatistics = require(script.Parent.DonationStatistics)
+local DonationMessaging = require(script.Parent.DonationMessaging)
 
 ---------------
 -- Constants --
@@ -33,14 +36,6 @@ local GameConfig = require(configurationFolder.GameConfig)
 
 local MAX_DATASTORE_RETRIES = 3
 local BASE_RETRY_DELAY = 1
-
----------------
--- Variables --
----------------
-
-local GiftPersistence = nil
-local DonationStatistics = nil
-local DonationMessaging = nil
 
 ---------------
 -- Functions --
@@ -130,9 +125,7 @@ local function processSuccessfulPurchase(purchasingPlayer, gamepassAssetId)
 	local gamepassProductInfo = fetchGamepassProductInfo(gamepassAssetId)
 	if not gamepassProductInfo then
 		warn(`[{script.Name}] Failed to retrieve product information for gamepass {gamepassAssetId}`)
-		if DonationStatistics then
-			DonationStatistics.sendDonationFailureNotification(purchasingPlayer)
-		end
+		DonationStatistics.sendDonationFailureNotification(purchasingPlayer)
 		return
 	end
 
@@ -145,53 +138,45 @@ local function processSuccessfulPurchase(purchasingPlayer, gamepassAssetId)
 	local creatorDisplayName = UsernameCache.getUsername(creatorUserId)
 	local creatorIsOnline = creatorPlayerInstance ~= nil
 
-	if DonationStatistics then
-		local statsUpdated = DonationStatistics.updateDonationStatistics(
-			purchasingPlayer.UserId,
-			creatorUserId,
-			priceInRobux
-		)
-		if not statsUpdated then
-			warn("[Transaction.PurchaseFlow] Failed to update donation statistics")
-		end
+	local statsUpdated = DonationStatistics.updateDonationStatistics(
+		purchasingPlayer.UserId,
+		creatorUserId,
+		priceInRobux
+	)
+	if not statsUpdated then
+		warn("[Transaction.PurchaseFlow] Failed to update donation statistics")
 	end
 
 	if creatorIsOnline then
 		Coins.SpawnCoins(purchasingPlayer, creatorPlayerInstance, 5)
 	end
 
-	if not creatorIsOnline and GiftPersistence then
+	if not creatorIsOnline then
 		local giftSaved = GiftPersistence.saveGiftToDataStore(purchasingPlayer.UserId, creatorUserId, priceInRobux)
 		if not giftSaved then
 			warn(`[{script.Name}] Failed to save gift to DataStore`)
 		end
 	end
 
-	if DonationStatistics then
-		DonationStatistics.sendDonationConfirmationToPlayer(purchasingPlayer, creatorDisplayName, creatorIsOnline)
-	end
+	DonationStatistics.sendDonationConfirmationToPlayer(purchasingPlayer, creatorDisplayName, creatorIsOnline)
 
 	purchasingPlayer:SetAttribute(tostring(gamepassAssetId), true)
 
-	if DonationMessaging then
-		local messagingConfiguration = GameConfig.MESSAGING_SERVICE_CONFIG
-		local LIVE_DONATION_BROADCAST_TOPIC = messagingConfiguration.LIVE_DONATION_TOPIC
+	local messagingConfiguration = GameConfig.MESSAGING_SERVICE_CONFIG
+	local LIVE_DONATION_BROADCAST_TOPIC = messagingConfiguration.LIVE_DONATION_TOPIC
 
-		DonationMessaging.broadcastToMessagingService(LIVE_DONATION_BROADCAST_TOPIC, {
-			Donor = purchasingPlayer.UserId,
-			Receiver = creatorUserId,
-			Amount = priceInRobux,
-		})
-	end
+	DonationMessaging.broadcastToMessagingService(LIVE_DONATION_BROADCAST_TOPIC, {
+		Donor = purchasingPlayer.UserId,
+		Receiver = creatorUserId,
+		Amount = priceInRobux,
+	})
 
-	if DonationStatistics then
-		DonationStatistics.announceDonationToAllPlayers(
-			purchasingPlayer,
-			creatorDisplayName,
-			priceInRobux,
-			creatorIsOnline
-		)
-	end
+	DonationStatistics.announceDonationToAllPlayers(
+		purchasingPlayer,
+		creatorDisplayName,
+		priceInRobux,
+		creatorIsOnline
+	)
 end
 
 function PurchaseFlow.handleGamepassPurchaseCompletion(purchasingPlayer, gamepassAssetId, purchaseWasSuccessful)
@@ -201,9 +186,7 @@ function PurchaseFlow.handleGamepassPurchaseCompletion(purchasingPlayer, gamepas
 	end
 
 	if not purchaseWasSuccessful then
-		if DonationStatistics then
-			DonationStatistics.sendPurchaseCancellationNotification(purchasingPlayer)
-		end
+		DonationStatistics.sendPurchaseCancellationNotification(purchasingPlayer)
 		return
 	end
 
@@ -241,11 +224,6 @@ function PurchaseFlow.handleDeveloperProductPurchase(receiptInfo)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
-	if not DonationStatistics then
-		warn(`[{script.Name}] DonationStatistics module not set`)
-		return Enum.ProductPurchaseDecision.NotProcessedYet
-	end
-
 	local success, status = DonationStatistics.updateDonorStatisticsWithReceipt(
 		playerId,
 		purchaseId,
@@ -264,18 +242,6 @@ function PurchaseFlow.handleDeveloperProductPurchase(receiptInfo)
 	end
 
 	return Enum.ProductPurchaseDecision.PurchaseGranted
-end
-
-function PurchaseFlow.setGiftPersistenceModule(module)
-	GiftPersistence = module
-end
-
-function PurchaseFlow.setDonationStatisticsModule(module)
-	DonationStatistics = module
-end
-
-function PurchaseFlow.setDonationMessagingModule(module)
-	DonationMessaging = module
 end
 
 -------------------

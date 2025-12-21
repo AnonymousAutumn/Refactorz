@@ -44,7 +44,11 @@ local function giveCarKeys()
 end
 
 local function enableUnclaimStandButton()
-	local topbarUI = playerGui:WaitForChild("TopbarUI")
+	local topbarUI = playerGui:WaitForChild("TopbarUI", 10)
+	if not topbarUI then
+		warn("TopbarUI not found in PlayerGui")
+		return
+	end
 	local mainFrame = topbarUI:WaitForChild("MainFrame")
 	local holder = mainFrame:WaitForChild("Holder")
 	local button = holder:WaitForChild("StandButton")

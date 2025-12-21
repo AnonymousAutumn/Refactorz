@@ -260,13 +260,17 @@ local function cleanup()
 end
 
 local function initialize()
-	local screenGui = localPlayerGui:WaitForChild("GiftUI")
+	local screenGui = localPlayerGui:WaitForChild("GiftUI", 10)
 	if not screenGui then
 		warn("GiftUI ScreenGui not found in PlayerGui")
 		return
 	end
 
-	local topbarUserInterface = localPlayerGui:WaitForChild("TopbarUI")
+	local topbarUserInterface = localPlayerGui:WaitForChild("TopbarUI", 10)
+	if not topbarUserInterface then
+		warn("TopbarUI not found in PlayerGui")
+		return
+	end
 	local topbarMainFrame = topbarUserInterface:WaitForChild("MainFrame")
 	local topbarContentHolder = topbarMainFrame:WaitForChild("Holder")
 	giftNotificationButton = topbarContentHolder:WaitForChild("GiftButton") 

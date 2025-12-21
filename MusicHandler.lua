@@ -171,7 +171,7 @@ local function waitForPlayerLoaded()
 end
 
 local function initialize()
-	local topbarUI = playerGui:WaitForChild("TopbarUI")
+	local topbarUI = playerGui:WaitForChild("TopbarUI", 10)
 	if not topbarUI then
 		warn(`[{script.Name}] TopbarUI not found in PlayerGui`)
 		return

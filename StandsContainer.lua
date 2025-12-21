@@ -153,7 +153,7 @@ local function cleanup()
 end
 
 local function initialize()
-	local screenGui = playerGui:WaitForChild("StandsContainer")
+	local screenGui = playerGui:WaitForChild("StandsContainer", 10)
 	if not screenGui then
 		warn(`[{script.Name}] StandsContainer ScreenGui not found in PlayerGui`)
 		return

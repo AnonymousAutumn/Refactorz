@@ -119,7 +119,7 @@ local function cleanup()
 end
 
 local function initialize()
-	local screenGui = playerGui:WaitForChild("GameUI")
+	local screenGui = playerGui:WaitForChild("GameUI", 10)
 	if not screenGui then
 		warn("GameUI not found in PlayerGui")
 		return

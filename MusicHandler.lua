@@ -17,7 +17,6 @@ local configurationFolder = ReplicatedStorage.Configuration
 
 local MusicLibrary = require(configurationFolder.MusicLibrary)
 local Connections = require(modulesFolder.Wrappers.Connections)
-local GamepadSelection = require(modulesFolder.Utilities.GamepadSelection)
 local ScrollAnimator = require(script.ScrollAnimator)
 local VolumeControl = require(script.VolumeControl)
 local TrackManager = require(script.TrackManager)
@@ -194,9 +193,6 @@ local function initialize()
 	waitForPlayerLoaded()
 	VolumeControl.initializeDefaults(volumeFill, volumeDragHandle, volumeState.currentVolumeNormalized)
 	setupEventConnections()
-
-	-- Setup gamepad navigation between music control buttons
-	GamepadSelection.setupNavigationOrder({previousTrackButton, nextTrackButton}, "horizontal")
 
 	playRandomTrack()
 

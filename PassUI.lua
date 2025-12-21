@@ -26,7 +26,6 @@ local ButtonWrapper = require(modulesFolder.Wrappers.Buttons)
 local InputCategorizer = require(modulesFolder.Utilities.InputCategorizer)
 local ValidationUtils = require(modulesFolder.Utilities.ValidationUtils)
 local NotificationHelper = require(modulesFolder.Utilities.NotificationHelper)
-local GamepadSelection = require(modulesFolder.Utilities.GamepadSelection)
 
 local uiSoundGroup = SoundService.UI
 local feedbackSoundGroup = SoundService.Feedback
@@ -176,17 +175,10 @@ end
 
 local function handleShopOpening()
 	animateGamePassShopInterfaceOpen()
-
-	-- Set gamepad selection to first button for console support
-	local firstButton = GamepadSelection.findFirstButton(gamePassItemsDisplayFrame)
-	if firstButton then
-		GamepadSelection.setSelection(firstButton, "PassUI")
-	end
 end
 
 local function handleShopClosing()
 	uiSoundGroup.Close:Play()
-	GamepadSelection.clearSelection("PassUI")
 	clearAllGamePassItemsFromDisplay()
 end
 

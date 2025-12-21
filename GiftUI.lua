@@ -14,7 +14,6 @@ local localPlayerGui = localPlayer:WaitForChild("PlayerGui")
 
 local modulesFolder = ReplicatedStorage.Modules
 local Connections = require(modulesFolder.Wrappers.Connections)
-local GamepadSelection = require(modulesFolder.Utilities.GamepadSelection)
 local TimeFormatter = require(script.TimeFormatter)
 local UIRenderer = require(script.UIRenderer)
 local ValidationHandler = require(script.ValidationHandler)
@@ -284,7 +283,7 @@ local function initialize()
 	usernameInputTextBox = usernameInputFrame:WaitForChild("TextBox")
 	giftSendConfirmationButton = sendGiftInterfaceFrame:WaitForChild("ConfirmButton")
 
-	-- Use Activated for cross-platform support (PC, Mobile, Console)
+	-- Use Activated for cross-platform support (PC, Mobile)
 	GiftUIState.connections:add(
 		giftNotificationButton.Activated:Connect(handleGiftNotificationButtonClick),
 		giftSendConfirmationButton.Activated:Connect(validateUsernameAndInitiateGiftProcess),
@@ -299,12 +298,6 @@ local function initialize()
 				cleanup()
 			end
 		end)
-	)
-
-	-- Setup gamepad auto-selection for console support
-	GiftUIState.connections:add(
-		GamepadSelection.setupAutoSelection(giftDisplayFrame, giftInterfaceCloseButton, "GiftDisplay"),
-		GamepadSelection.setupAutoSelection(sendGiftInterfaceFrame, giftSendConfirmationButton, "SendGift")
 	)
 
 	BackgroundTasks.requestLatestGiftDataCallback = requestLatestGiftDataFromServer
